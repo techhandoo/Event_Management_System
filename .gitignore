@@ -1,0 +1,38 @@
+# ─── IDE ───────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─── Java / Maven ──────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# ─── Node / React ──────────────────────────────────────
+node_modules/
+build/
+dist/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ─── Docker ────────────────────────────────────────────
+.docker/
+
+# ─── OS ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Logs ──────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Freebuff ──────────────────────────────────────────
+.freebuff/
