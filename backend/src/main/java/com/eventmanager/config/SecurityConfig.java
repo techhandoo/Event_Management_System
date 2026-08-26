@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events/{id}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/events/search").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events/*/availability").permitAll()
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/actuator/**").permitAll()

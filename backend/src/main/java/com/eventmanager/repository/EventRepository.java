@@ -30,10 +30,12 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.startTime > :now ORDER BY e.startTime ASC")
     List<Event> findUpcomingPublishedEvents(@Param("now") LocalDateTime now, Pageable pageable);
 
-    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.city LIKE %:query% OR e.title LIKE %:query% OR e.description LIKE %:query%")
+    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND (LOWER(e.city) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(e.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<Event> searchEvents(@Param("query") String query, Pageable pageable);
 
     long countByOrganizerIdAndStatus(Long organizerId, EventStatus status);
+
+    long countByOrganizerId(Long organizerId);
 
     @Query("SELECT COALESCE(SUM(e.priceCents * e.bookedCount), 0) FROM Event e WHERE e.organizer.id = :organizerId")
     long sumRevenueByOrganizerId(@Param("organizerId") Long organizerId);

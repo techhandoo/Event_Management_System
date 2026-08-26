@@ -6,6 +6,7 @@ import com.eventmanager.dto.response.ApiResponse;
 import com.eventmanager.dto.response.EventResponse;
 import com.eventmanager.service.EventService;
 import jakarta.validation.Valid;
+import com.eventmanager.dto.response.OrganizerStatsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -80,6 +81,23 @@ public class EventController {
     public ResponseEntity<ApiResponse<Integer>> getAvailability(@PathVariable Long id) {
         int availability = eventService.getAvailability(id);
         return ResponseEntity.ok(ApiResponse.success(availability));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<EventResponse>>> searchEvents(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<EventResponse> events = eventService.searchEvents(q,
+                PageRequest.of(page, size, Sort.by("startTime").ascending()));
+        return ResponseEntity.ok(ApiResponse.success(events));
+    }
+
+    @GetMapping("/my/stats")
+    public ResponseEntity<ApiResponse<OrganizerStatsResponse>> getMyStats(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        OrganizerStatsResponse stats = eventService.getOrganizerStats(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(stats));
     }
 
     @GetMapping("/my")

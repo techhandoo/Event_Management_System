@@ -2,7 +2,9 @@ package com.eventmanager.service;
 
 import com.eventmanager.dto.response.AnalyticsResponse;
 import com.eventmanager.dto.response.UserResponse;
+import com.eventmanager.exception.ResourceNotFoundException;
 import com.eventmanager.mapper.UserMapper;
+import com.eventmanager.model.User;
 import com.eventmanager.model.enums.EventStatus;
 import com.eventmanager.model.enums.Role;
 import com.eventmanager.repository.BookingRepository;
@@ -56,5 +58,40 @@ public class AdminService {
                 .totalBookings(totalBookings)
                 .totalRevenueCents(totalRevenue)
                 .build();
+    }
+
+    @Transactional
+    public UserResponse changeUserRole(Long userId, String roleStr, String adminEmail) {
+        User admin = userRepository.findByEmail(adminEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin", "email", adminEmail));
+
+        if (admin.getRole() != Role.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException("Only admins can change roles");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        Role newRole = Role.valueOf(roleStr.toUpperCase());
+        user.setRole(newRole);
+        user = userRepository.save(user);
+        return userMapper.toResponse(user);
+    }
+
+    @Transactional
+    public UserResponse toggleUserBan(Long userId, String adminEmail) {
+        User admin = userRepository.findByEmail(adminEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin", "email", adminEmail));
+
+        if (admin.getRole() != Role.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException("Only admins can ban users");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        user.setIsActive(!user.getIsActive());
+        user = userRepository.save(user);
+        return userMapper.toResponse(user);
     }
 }

@@ -5,6 +5,8 @@ import com.eventmanager.dto.response.BookingResponse;
 import com.eventmanager.exception.DuplicateResourceException;
 import com.eventmanager.exception.InsufficientCapacityException;
 import com.eventmanager.exception.ResourceNotFoundException;
+import com.eventmanager.kafka.event.BookingEvent;
+import com.eventmanager.kafka.producer.BookingEventProducer;
 import com.eventmanager.mapper.BookingMapper;
 import com.eventmanager.model.Booking;
 import com.eventmanager.model.Event;
@@ -27,15 +29,18 @@ public class BookingService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
+    private final BookingEventProducer bookingEventProducer;
 
     public BookingService(BookingRepository bookingRepository,
                           EventRepository eventRepository,
                           UserRepository userRepository,
-                          BookingMapper bookingMapper) {
+                          BookingMapper bookingMapper,
+                          BookingEventProducer bookingEventProducer) {
         this.bookingRepository = bookingRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.bookingMapper = bookingMapper;
+        this.bookingEventProducer = bookingEventProducer;
     }
 
     @Transactional
@@ -79,6 +84,20 @@ public class BookingService {
                 .build();
 
         booking = bookingRepository.save(booking);
+
+        // ── Kafka: publish booking.created event ──────────────────────
+        BookingEvent kafkaEvent = BookingEvent.of(
+                booking.getId(),
+                user.getId(),
+                user.getEmail(),
+                event.getId(),
+                event.getTitle(),
+                quantity,
+                totalCents,
+                "CONFIRMED"
+        );
+        bookingEventProducer.sendBookingEvent(kafkaEvent);
+
         return bookingMapper.toResponse(booking);
     }
 
@@ -128,6 +147,20 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         booking = bookingRepository.save(booking);
+
+        // ── Kafka: publish booking.cancelled event ─────────────────────
+        BookingEvent kafkaEvent = BookingEvent.of(
+                booking.getId(),
+                booking.getUser().getId(),
+                booking.getUser().getEmail(),
+                event.getId(),
+                event.getTitle(),
+                booking.getQuantity(),
+                booking.getTotalCents(),
+                "CANCELLED"
+        );
+        bookingEventProducer.sendBookingEvent(kafkaEvent);
+
         return bookingMapper.toResponse(booking);
     }
 }

@@ -3,13 +3,19 @@ package com.eventmanager.service;
 import com.eventmanager.dto.request.CreateEventRequest;
 import com.eventmanager.dto.request.UpdateEventRequest;
 import com.eventmanager.dto.response.EventResponse;
+import com.eventmanager.dto.response.OrganizerStatsResponse;
 import com.eventmanager.exception.ResourceNotFoundException;
+import com.eventmanager.kafka.event.EventEvent;
+import com.eventmanager.kafka.producer.EventEventProducer;
 import com.eventmanager.mapper.EventMapper;
 import com.eventmanager.model.Event;
 import com.eventmanager.model.User;
 import com.eventmanager.model.enums.EventStatus;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,13 +27,16 @@ public class EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final EventMapper eventMapper;
+    private final EventEventProducer eventEventProducer;
 
     public EventService(EventRepository eventRepository,
                         UserRepository userRepository,
-                        EventMapper eventMapper) {
+                        EventMapper eventMapper,
+                        EventEventProducer eventEventProducer) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.eventMapper = eventMapper;
+        this.eventEventProducer = eventEventProducer;
     }
 
     @Transactional
@@ -71,12 +80,17 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "event-detail", key = "#eventId")
     public EventResponse getEvent(Long eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", "id", eventId));
         return eventMapper.toResponse(event);
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "event-detail", key = "#eventId"),
+        @CacheEvict(value = "events", allEntries = true)
+    })
     @Transactional
     public EventResponse updateEvent(Long eventId, UpdateEventRequest request, String userEmail) {
         Event event = eventRepository.findById(eventId)
@@ -85,7 +99,6 @@ public class EventService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
 
-        // Check ownership or admin role
         if (!event.getOrganizer().getId().equals(user.getId()) && user.getRole() != com.eventmanager.model.enums.Role.ADMIN) {
             throw new org.springframework.security.access.AccessDeniedException("You can only update your own events");
         }
@@ -105,6 +118,10 @@ public class EventService {
         return eventMapper.toResponse(event);
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "event-detail", key = "#eventId"),
+        @CacheEvict(value = "events", allEntries = true)
+    })
     @Transactional
     public void deleteEvent(Long eventId, String userEmail) {
         Event event = eventRepository.findById(eventId)
@@ -119,8 +136,21 @@ public class EventService {
 
         event.setStatus(EventStatus.CANCELLED);
         eventRepository.save(event);
+
+        // ── Kafka: publish event.cancelled ─────────────────────────
+        EventEvent kafkaEvent = EventEvent.of(
+                event.getId(),
+                event.getOrganizer().getId(),
+                event.getTitle(),
+                "CANCELLED"
+        );
+        eventEventProducer.sendEventEvent(kafkaEvent);
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "event-detail", key = "#eventId"),
+        @CacheEvict(value = "events", allEntries = true)
+    })
     @Transactional
     public EventResponse publishEvent(Long eventId, String userEmail) {
         Event event = eventRepository.findById(eventId)
@@ -139,6 +169,16 @@ public class EventService {
 
         event.setStatus(EventStatus.PUBLISHED);
         event = eventRepository.save(event);
+
+        // ── Kafka: publish event.published ──────────────────────────
+        EventEvent kafkaEvent = EventEvent.of(
+                event.getId(),
+                event.getOrganizer().getId(),
+                event.getTitle(),
+                "PUBLISHED"
+        );
+        eventEventProducer.sendEventEvent(kafkaEvent);
+
         return eventMapper.toResponse(event);
     }
 
@@ -154,6 +194,34 @@ public class EventService {
         User organizer = userRepository.findByEmail(organizerEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", organizerEmail));
         return eventRepository.findByOrganizerId(organizer.getId(), pageable)
+                .map(eventMapper::toResponse);
+    }
+
+    // ── Organizer Stats ─────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public OrganizerStatsResponse getOrganizerStats(String organizerEmail) {
+        User organizer = userRepository.findByEmail(organizerEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", organizerEmail));
+
+        long totalEvents = eventRepository.countByOrganizerId(organizer.getId());
+        long publishedEvents = eventRepository.countByOrganizerIdAndStatus(organizer.getId(), EventStatus.PUBLISHED);
+        long draftEvents = eventRepository.countByOrganizerIdAndStatus(organizer.getId(), EventStatus.DRAFT);
+        long totalRevenue = eventRepository.sumRevenueByOrganizerId(organizer.getId());
+
+        return OrganizerStatsResponse.builder()
+                .totalEvents(totalEvents)
+                .publishedEvents(publishedEvents)
+                .draftEvents(draftEvents)
+                .totalRevenueCents(totalRevenue)
+                .build();
+    }
+
+    // ── Search ─────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public Page<EventResponse> searchEvents(String query, Pageable pageable) {
+        return eventRepository.searchEvents(query, pageable)
                 .map(eventMapper::toResponse);
     }
 }
