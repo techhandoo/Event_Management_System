@@ -1,0 +1,186 @@
+# ═══════════════════════════════════════════════════════════════
+# CI/CD Pipeline — Event Management Platform
+# ═══════════════════════════════════════════════════════════════
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  JAVA_VERSION: '17'
+  NODE_VERSION: '20'
+
+# ═══════════════════════════════════════════════════════════════
+# Jobs
+# ═══════════════════════════════════════════════════════════════
+jobs:
+  # ─── Backend Build & Test ────────────────────────────────
+  backend:
+    name: 🔧 Backend Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: event_manager_test
+          MYSQL_USER: test
+          MYSQL_PASSWORD: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ☕ Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: 🔨 Build with Maven
+        run: ./mvnw clean compile -B
+
+      - name: 🧪 Run unit tests
+        run: ./mvnw test -B -Dspring.profiles.active=test
+
+      - name: 📊 Generate coverage report
+        run: ./mvnw jacoco:report -B
+        continue-on-error: true
+
+      - name: 📦 Package
+        run: ./mvnw package -DskipTests -B
+
+      - name: 📤 Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/*.jar
+          retention-days: 7
+
+  # ─── Frontend Build & Lint ───────────────────────────────
+  frontend:
+    name: 🎨 Frontend Build & Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: 🔨 Build
+        run: npm run build
+
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  # ─── Docker Build ────────────────────────────────────────
+  docker:
+    name: 🐳 Docker Build
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 🏗️ Build & Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/event-manager-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 🏗️ Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/event-manager-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─── Deploy to Render ────────────────────────────────────
+  deploy-backend:
+    name: 🚀 Deploy Backend to Render
+    runs-on: ubuntu-latest
+    needs: [backend, docker]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔄 Deploy to Render
+        uses: johnbeynon/render-deploy-action@v1.0.3
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+
+  # ─── Deploy Frontend to Vercel ───────────────────────────
+  deploy-frontend:
+    name: 🚀 Deploy Frontend to Vercel
+    runs-on: ubuntu-latest
+    needs: [frontend]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 🚀 Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./frontend
+          vercel-args: '--prod'

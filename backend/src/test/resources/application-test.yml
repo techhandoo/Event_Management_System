@@ -1,0 +1,43 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  flyway:
+    enabled: true
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: test-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.eventmanager.kafka.event"
+        spring.json.add.type.headers: false
+
+app:
+  jwt:
+    secret: testSecretKeyForUnitTestsOnlyMustBe256BitsOrMoreForHS256Algorithm!!
+    access-token-expiration-ms: 900000
+    refresh-token-expiration-ms: 604800000
+    token-prefix: "Bearer "
+    authorization-header: "Authorization"
+
+logging:
+  level:
+    com.eventmanager: INFO
+    org.springframework.security: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

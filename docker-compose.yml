@@ -1,10 +1,12 @@
 version: '3.8'
 
 services:
-  # ─── MySQL Database ───────────────────────────────────
+  # ═══════════════════════════════════════════════════════════════
+  # MySQL Database
+  # ═══════════════════════════════════════════════════════════════
   mysql:
     image: mysql:8.0
-    container_name: event-manager-mysql
+    container_name: event-mysql
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: event_manager
@@ -14,59 +16,66 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - event-network
 
-  # ─── Apache Kafka (KRaft Mode) ────────────────────────
+  # ═══════════════════════════════════════════════════════════════
+  # Zookeeper (required by Kafka)
+  # ═══════════════════════════════════════════════════════════════
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: event-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - event-network
+
+  # ═══════════════════════════════════════════════════════════════
+  # Kafka
+  # ═══════════════════════════════════════════════════════════════
   kafka:
-    image: confluentinc/cp-kafka:7.6.0
-    container_name: event-manager-kafka
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: event-kafka
     depends_on:
       zookeeper:
         condition: service_healthy
     ports:
       - "9092:9092"
-      - "9101:9101"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_JMX_PORT: 9101
-      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092"]
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 10s
       timeout: 10s
       retries: 5
+    networks:
+      - event-network
 
-  # ─── Zookeeper ────────────────────────────────────────
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.6.0
-    container_name: event-manager-zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ─── Redis ────────────────────────────────────────────
+  # ═══════════════════════════════════════════════════════════════
+  # Redis
+  # ═══════════════════════════════════════════════════════════════
   redis:
     image: redis:7-alpine
-    container_name: event-manager-redis
+    container_name: event-redis
     ports:
       - "6379:6379"
     volumes:
@@ -76,9 +85,63 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - event-network
 
+  # ═══════════════════════════════════════════════════════════════
+  # Spring Boot Backend
+  # ═══════════════════════════════════════════════════════════════
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: event-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/event_manager?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: eventmanager
+      SPRING_DATASOURCE_PASSWORD: eventmanager123
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-myDefaultSecretKeyForDevelopmentOnlyDoNotUseInProduction2024!}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - event-network
+
+  # ═══════════════════════════════════════════════════════════════
+  # React Frontend
+  # ═══════════════════════════════════════════════════════════════
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: event-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - event-network
+
+# ═══════════════════════════════════════════════════════════════
+# Volumes
+# ═══════════════════════════════════════════════════════════════
 volumes:
   mysql_data:
-    driver: local
   redis_data:
-    driver: local
+
+# ═══════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════
+networks:
+  event-network:
+    driver: bridge
