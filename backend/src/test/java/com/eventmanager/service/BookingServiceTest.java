@@ -99,7 +99,8 @@ class BookingServiceTest {
 
     @Test
     void createBookingInsufficientCapacityThrows() {
-        event.setCapacity(15).setBookedCount(14); // only 1 left, but booking 2
+        event.setCapacity(15);
+        event.setBookedCount(14); // only 1 left, but booking 2
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(eventRepository.findById(10L)).thenReturn(Optional.of(event));
         when(bookingRepository.existsByUserIdAndEventIdAndStatusIn(eq(1L), eq(10L), anyList())).thenReturn(false);
