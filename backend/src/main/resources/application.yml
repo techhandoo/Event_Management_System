@@ -7,7 +7,7 @@ spring:
 
   # ─── Datasource (PostgreSQL) ──────────────────────────
   datasource:
-    url: jdbc:postgresql://localhost:5432/event
+    url: jdbc:postgresql://localhost:5432/eventry
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver

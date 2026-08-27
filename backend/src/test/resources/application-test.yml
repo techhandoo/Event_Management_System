@@ -1,9 +1,9 @@
 spring:
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
   flyway:
     enabled: true
@@ -30,6 +30,10 @@ app:
     refresh-token-expiration-ms: 604800000
     token-prefix: "Bearer "
     authorization-header: "Authorization"
+  email:
+    resend-api-key: re_placeholder
+    from-address: noreply@eventry.app
+    frontend-url: http://localhost:5173
 
 logging:
   level:

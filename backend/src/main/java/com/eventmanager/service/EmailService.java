@@ -68,7 +68,7 @@ public class EmailService {
             </head>
             <body style="margin:0;padding:0;background-color:#f8fafc;font-family:Inter,system-ui,sans-serif;">
                 <div style="max-width:500px;margin:40px auto;background:white;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
-                    <div style="background:#4f46e5;padding:32px;text-align:center;">
+                    <div style="background:#0070F3;padding:32px;text-align:center;">
                         <h1 style="color:white;margin:0;font-size:24px;font-weight:700;">Eventry</h1>
                     </div>
                     <div style="padding:32px;">
@@ -77,7 +77,7 @@ public class EmailService {
                             We received a request to reset your password. Click the button below to create a new password.
                             This link expires in 1 hour.
                         </p>
-                        <a href="%s" style="display:inline-block;background:#4f46e5;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
+                        <a href="%s" style="display:inline-block;background:#0070F3;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">
                             Reset Password
                         </a>
                         <p style="color:#94a3b8;font-size:12px;line-height:1.6;margin:24px 0 0;">

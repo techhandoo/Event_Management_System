@@ -16,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration test that spins up real MySQL and Kafka containers
+ * Integration test that spins up real PostgreSQL and Kafka containers
  * and tests the full booking workflow end-to-end.
  */
 @SpringBootTest
@@ -36,8 +36,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class EventBookingIntegrationTest {
 
     @Container
-    static MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"))
-            .withDatabaseName("event_manager_test")
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"))
+            .withDatabaseName("eventry_test")
             .withUsername("test")
             .withPassword("test");
 
@@ -46,9 +46,10 @@ class EventBookingIntegrationTest {
 
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", mysql::getJdbcUrl);
-        registry.add("spring.datasource.username", mysql::getUsername);
-        registry.add("spring.datasource.password", mysql::getPassword);
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
         registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
     }
 
@@ -153,7 +154,6 @@ class EventBookingIntegrationTest {
     @Test
     @Order(7)
     void cancelBookingReleasesCapacity() {
-        // Get the booking ID from the list
         var bookings = bookingService.getMyBookings("attendee@test.com",
                 org.springframework.data.domain.PageRequest.of(0, 10));
         Long bookingId = bookings.getContent().get(0).getId();
@@ -168,6 +168,6 @@ class EventBookingIntegrationTest {
     void eventAvailabilityUpdatedAfterCancel() {
         int availability = eventService.getAvailability(eventId);
 
-        assertEquals(5, availability); // 5 capacity - 0 booked (was 2, cancelled)
+        assertEquals(5, availability);
     }
 }
