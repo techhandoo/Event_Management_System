@@ -2,34 +2,33 @@ version: '3.8'
 
 services:
   # ═══════════════════════════════════════════════════════════════
-  # MySQL Database
+  # PostgreSQL Database
   # ═══════════════════════════════════════════════════════════════
-  mysql:
-    image: mysql:8.0
-    container_name: event-mysql
+  postgres:
+    image: postgres:16-alpine
+    container_name: eventry-postgres
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: event_manager
-      MYSQL_USER: eventmanager
-      MYSQL_PASSWORD: eventmanager123
+      POSTGRES_DB: eventry
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - event-network
+      - eventry-network
 
   # ═══════════════════════════════════════════════════════════════
   # Zookeeper (required by Kafka)
   # ═══════════════════════════════════════════════════════════════
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
-    container_name: event-zookeeper
+    container_name: eventry-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -41,14 +40,14 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - event-network
+      - eventry-network
 
   # ═══════════════════════════════════════════════════════════════
   # Kafka
   # ═══════════════════════════════════════════════════════════════
   kafka:
     image: confluentinc/cp-kafka:7.5.0
-    container_name: event-kafka
+    container_name: eventry-kafka
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -68,14 +67,14 @@ services:
       timeout: 10s
       retries: 5
     networks:
-      - event-network
+      - eventry-network
 
   # ═══════════════════════════════════════════════════════════════
   # Redis
   # ═══════════════════════════════════════════════════════════════
   redis:
     image: redis:7-alpine
-    container_name: event-redis
+    container_name: eventry-redis
     ports:
       - "6379:6379"
     volumes:
@@ -86,7 +85,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - event-network
+      - eventry-network
 
   # ═══════════════════════════════════════════════════════════════
   # Spring Boot Backend
@@ -95,27 +94,27 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: event-backend
+    container_name: eventry-backend
     ports:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/event_manager?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: eventmanager
-      SPRING_DATASOURCE_PASSWORD: eventmanager123
+      DATABASE_URL: jdbc:postgresql://postgres:5432/eventry
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      JWT_SECRET: ${JWT_SECRET:-myDefaultSecretKeyForDevelopmentOnlyDoNotUseInProduction2024!}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       kafka:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - event-network
+      - eventry-network
 
   # ═══════════════════════════════════════════════════════════════
   # React Frontend
@@ -124,24 +123,24 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: event-frontend
+    container_name: eventry-frontend
     ports:
       - "3000:80"
     depends_on:
       - backend
     networks:
-      - event-network
+      - eventry-network
 
 # ═══════════════════════════════════════════════════════════════
 # Volumes
 # ═══════════════════════════════════════════════════════════════
 volumes:
-  mysql_data:
+  pg_data:
   redis_data:
 
 # ═══════════════════════════════════════════════════════════════
 # Networks
 # ═══════════════════════════════════════════════════════════════
 networks:
-  event-network:
+  eventry-network:
     driver: bridge

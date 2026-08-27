@@ -4,7 +4,10 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Event, ApiResponse } from '../types';
 import toast from 'react-hot-toast';
-import { MapPin, Clock, Users, DollarSign, ArrowLeft, Ticket } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { MapPin, Users, ArrowLeft, Ticket, Calendar } from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
+import { PageLoader } from '../components/ui';
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,134 +19,132 @@ export default function EventDetailPage() {
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    const fetchEvent = async () => {
-      try {
-        const response = await api.get<ApiResponse<Event>>(`/events/${id}`);
-        setEvent(response.data.data);
-      } catch {
-        toast.error('Event not found');
-        navigate('/events');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEvent();
+    api.get<ApiResponse<Event>>(`/events/${id}`)
+      .then(r => setEvent(r.data.data))
+      .catch(() => { toast.error('Event not found'); navigate('/events'); })
+      .finally(() => setLoading(false));
   }, [id, navigate]);
 
   const handleBook = async () => {
-    if (!isAuthenticated) {
-      toast.error('Please login to book this event');
-      navigate('/login');
-      return;
-    }
+    if (!isAuthenticated) { toast.error('Please sign in to book'); navigate('/login'); return; }
     setBooking(true);
-    try {
-      await api.post('/bookings', { eventId: Number(id), quantity });
-      toast.success('Booking confirmed!');
-      navigate('/my-bookings');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Booking failed');
-    } finally {
-      setBooking(false);
-    }
+    try { await api.post('/bookings', { eventId: Number(id), quantity }); toast.success('Booking confirmed'); navigate('/my-bookings'); }
+    catch (err: any) { toast.error(err.response?.data?.message || 'Booking failed'); }
+    finally { setBooking(false); }
   };
 
-  if (loading) return <div className="text-center py-12">Loading...</div>;
+  if (loading) return <DashboardLayout><PageLoader /></DashboardLayout>;
   if (!event) return null;
 
-  const formatPrice = (cents: number) => cents === 0 ? 'Free' : `$${(cents / 100).toFixed(2)}`;
-  const formatDate = (date: string) => new Date(date).toLocaleDateString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
+  const fmt = (c: number) => c === 0 ? 'Free' : `$${(c / 100).toFixed(2)}`;
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const capacityPct = event.capacity > 0 ? Math.round(((event.capacity - event.availableCapacity) / event.capacity) * 100) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <button onClick={() => navigate('/events')} className="flex items-center text-gray-600 hover:text-gray-900 mb-6">
-        <ArrowLeft className="h-4 w-4 mr-2" />Back to Events
-      </button>
+    <DashboardLayout>
+      <div className="max-w-4xl mx-auto">
+        <button onClick={() => navigate('/events')} className="btn-ghost text-sm mb-4 -ml-2">
+          <ArrowLeft size={16} /> Back to events
+        </button>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="h-64 bg-gradient-to-br from-primary-400 to-primary-700 flex items-center justify-center">
-          <span className="text-white text-7xl font-bold opacity-20">{event.title[0]}</span>
-        </div>
-
-        <div className="p-8">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
-              {event.category && (
-                <span className="inline-block text-sm bg-primary-100 text-primary-700 px-3 py-1 rounded-full">
-                  {event.category}
-                </span>
-              )}
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-primary-600">{formatPrice(event.priceCents)}</div>
-              <div className="text-sm text-gray-500">per ticket</div>
-            </div>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card overflow-hidden">
+          {/* Hero image */}
+          <div className="h-56 sm:h-72 bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center relative">
+            {event.imageUrl ? (
+              <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-white text-7xl font-bold opacity-10">{event.title[0]}</span>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-gray-600">
-                <Clock className="h-5 w-5 text-primary-500" />
-                <div>
-                  <div className="font-medium">{formatDate(event.startTime)}</div>
-                  <div className="text-sm text-gray-400">to {formatDate(event.endTime)}</div>
-                </div>
+          <div className="p-6 sm:p-8">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
+              <div>
+                <h1 className="text-2xl font-bold text-surface-800 mb-2">{event.title}</h1>
+                {event.category && <span className="badge-brand">{event.category}</span>}
               </div>
-              <div className="flex items-center gap-3 text-gray-600">
-                <MapPin className="h-5 w-5 text-primary-500" />
-                <div>
-                  <div className="font-medium">{event.venue}</div>
-                  <div className="text-sm text-gray-400">{event.city}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 text-gray-600">
-                <Users className="h-5 w-5 text-primary-500" />
-                <div>
-                  <div className="font-medium">{event.availableCapacity} spots available</div>
-                  <div className="text-sm text-gray-400">out of {event.capacity} total</div>
-                </div>
+              <div className="text-right flex-shrink-0">
+                <div className="text-2xl font-bold text-brand-600">{fmt(event.priceCents)}</div>
+                <div className="text-xs text-surface-400">per ticket</div>
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-xl p-6">
-              <h3 className="font-semibold mb-3">Book Tickets</h3>
-              <div className="flex items-center gap-3 mb-4">
-                <label className="text-sm text-gray-600">Quantity:</label>
-                <select value={quantity} onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="border border-gray-300 rounded-lg px-3 py-1">
-                  {Array.from({ length: Math.min(10, event.availableCapacity) }, (_, i) => i + 1).map(n => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
+            {/* Info + Booking */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="space-y-5">
+                <InfoRow icon={<Calendar size={18} className="text-brand-500" />} label={fmtDate(event.startTime)} sub={`to ${fmtDate(event.endTime)}`} />
+                <InfoRow icon={<MapPin size={18} className="text-brand-500" />} label={event.venue} sub={event.city} />
+                <InfoRow icon={<Users size={18} className="text-brand-500" />} label={`${event.availableCapacity} spots available`} sub={`out of ${event.capacity} total`} />
+                {/* Capacity bar */}
+                <div>
+                  <div className="flex items-center justify-between text-xs text-surface-500 mb-1.5">
+                    <span>{capacityPct}% filled</span>
+                    <span>{event.bookedCount} / {event.capacity}</span>
+                  </div>
+                  <div className="w-full h-2 bg-surface-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        capacityPct >= 90 ? 'bg-red-500' : capacityPct >= 70 ? 'bg-amber-500' : 'bg-brand-500'
+                      }`}
+                      style={{ width: `${capacityPct}%` }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="text-lg font-semibold mb-4">
-                Total: {event.priceCents === 0 ? 'Free' : `$${((event.priceCents * quantity) / 100).toFixed(2)}`}
+
+              {/* Booking widget */}
+              <div className="bg-surface-50 rounded-xl p-6 border border-surface-150">
+                <h3 className="text-sm font-semibold text-surface-800 mb-4">Book tickets</h3>
+                <div className="flex items-center gap-3 mb-4">
+                  <label className="text-sm text-surface-600 font-medium">Quantity</label>
+                  <select
+                    value={quantity}
+                    onChange={e => setQuantity(Number(e.target.value))}
+                    className="input w-24 h-9"
+                  >
+                    {Array.from({ length: Math.min(10, event.availableCapacity) }, (_, i) => i + 1).map(n => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="text-lg font-bold text-surface-800 mb-4">
+                  Total: {event.priceCents === 0 ? 'Free' : `$${((event.priceCents * quantity) / 100).toFixed(2)}`}
+                </div>
+                <button
+                  onClick={handleBook}
+                  disabled={booking || event.availableCapacity === 0}
+                  className="btn-primary w-full h-11"
+                >
+                  <Ticket size={16} /> {booking ? 'Booking...' : event.availableCapacity === 0 ? 'Sold out' : 'Book now'}
+                </button>
               </div>
-              <button
-                onClick={handleBook}
-                disabled={booking || event.availableCapacity === 0}
-                className="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition flex items-center justify-center gap-2"
-              >
-                <Ticket className="h-5 w-5" />
-                {booking ? 'Booking...' : event.availableCapacity === 0 ? 'Sold Out' : 'Book Now'}
-              </button>
+            </div>
+
+            {/* Description */}
+            {event.description && (
+              <div>
+                <h3 className="text-sm font-semibold text-surface-800 mb-2">About this event</h3>
+                <p className="text-sm text-surface-600 whitespace-pre-wrap leading-relaxed">{event.description}</p>
+              </div>
+            )}
+            <div className="mt-6 pt-4 border-t border-surface-100 text-xs text-surface-400">
+              Organized by {event.organizerName}
             </div>
           </div>
+        </motion.div>
+      </div>
+    </DashboardLayout>
+  );
+}
 
-          {event.description && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3">About This Event</h3>
-              <p className="text-gray-600 whitespace-pre-wrap">{event.description}</p>
-            </div>
-          )}
-
-          <div className="mt-6 text-sm text-gray-400">
-            Organized by {event.organizerName}
-          </div>
-        </div>
+function InfoRow({ icon, label, sub }: { icon: React.ReactNode; label: string; sub: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5 flex-shrink-0">{icon}</div>
+      <div>
+        <p className="text-sm font-medium text-surface-800">{label}</p>
+        <p className="text-xs text-surface-500">{sub}</p>
       </div>
     </div>
   );

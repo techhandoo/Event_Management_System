@@ -1,156 +1,128 @@
-import { useEffect, useState, useRef } from 'react';
-import { Bell, CheckCheck, X } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bell, Check, CheckCheck, CalendarCheck, CalendarX, RotateCcw, AlertCircle, X } from 'lucide-react';
 import api from '../services/api';
 import { Notification } from '../types';
-import toast from 'react-hot-toast';
 
-interface PagedNotifications {
-  content: Notification[];
-  totalElements: number;
-  totalPages: number;
-}
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+  BOOKING_CONFIRMED: <CalendarCheck size={16} className="text-emerald-500" />,
+  EVENT_REMINDER: <Bell size={16} className="text-brand-600" />,
+  EVENT_CANCELLED: <CalendarX size={16} className="text-red-500" />,
+  REFUND_PROCESSED: <RotateCcw size={16} className="text-amber-500" />,
+};
 
 export default function NotificationCenter() {
-  const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30s
-    return () => clearInterval(interval);
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (open) fetchNotifications();
-  }, [open]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const fetchUnreadCount = async () => {
-    try {
-      const res = await api.get('/notifications/unread-count');
-      setUnreadCount(res.data.data.count);
-    } catch {
-      // silently fail
-    }
-  };
+  const ref = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
-    setLoading(true);
     try {
-      const res = await api.get('/notifications?page=0&size=20');
-      const data: PagedNotifications = res.data.data;
-      setNotifications(data.content);
-    } catch {
-      toast.error('Failed to load notifications');
-    } finally {
-      setLoading(false);
-    }
+      const [n, c] = await Promise.all([
+        api.get('/notifications?size=20'),
+        api.get('/notifications/unread-count'),
+      ]);
+      setNotifications(n.data.data.content || []);
+      setUnreadCount(c.data.data.count ?? c.data.data);
+    } catch {}
   };
 
-  const handleMarkAllRead = async () => {
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const markAllRead = async () => {
     try {
       await api.put('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
-      toast.success('All notifications marked as read');
-    } catch {
-      toast.error('Failed to mark as read');
-    }
-  };
-
-  if (!isAuthenticated) return null;
-
-  const typeIcon = (type: string) => {
-    switch (type) {
-      case 'BOOKING_CONFIRMED': return '🎫';
-      case 'EVENT_REMINDER': return '📅';
-      case 'EVENT_CANCELLED': return '❌';
-      case 'REFUND_PROCESSED': return '💰';
-      default: return '🔔';
-    }
+    } catch {}
   };
 
   return (
-    <div className="relative" ref={panelRef}>
-      {/* Bell button */}
+    <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+        className="relative p-2 rounded-lg hover:bg-surface-50 transition-colors"
       >
-        <Bell size={20} />
+        <Bell size={18} className="text-surface-500" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
+          <span className="absolute top-1 right-1 w-2 h-2 bg-brand-600 rounded-full ring-2 ring-white" />
         )}
       </button>
 
-      {/* Dropdown panel */}
-      {open && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
-            <h3 className="font-semibold text-gray-900">Notifications</h3>
-            <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
-                <button onClick={handleMarkAllRead} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
-                  <CheckCheck size={14} /> Mark all read
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-dropdown border border-surface-150 z-50 overflow-hidden"
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-surface-100">
+              <h3 className="text-sm font-semibold text-surface-800">Notifications</h3>
+              <div className="flex items-center gap-1">
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllRead}
+                    className="text-xs text-brand-600 hover:text-brand-700 font-medium px-2 py-1 rounded-md hover:bg-brand-50 transition-colors"
+                  >
+                    Mark all read
+                  </button>
+                )}
+                <button onClick={() => setOpen(false)} className="p-1 hover:bg-surface-50 rounded-md transition-colors">
+                  <X size={14} className="text-surface-400" />
                 </button>
-              )}
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X size={18} />
-              </button>
+              </div>
             </div>
-          </div>
 
-          <div className="max-h-96 overflow-y-auto">
-            {loading ? (
-              <div className="p-8 text-center text-gray-500">Loading...</div>
-            ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">No notifications yet</div>
-            ) : (
-              notifications.map((n) => (
-                <div
-                  key={n.id}
-                  className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition ${
-                    !n.isRead ? 'bg-indigo-50' : ''
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-lg mt-0.5">{typeIcon(n.type)}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${!n.isRead ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+            <div className="max-h-80 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="py-8 text-center">
+                  <AlertCircle size={24} className="text-surface-300 mx-auto mb-2" />
+                  <p className="text-sm text-surface-400">No notifications yet</p>
+                </div>
+              ) : (
+                notifications.map(n => (
+                  <div
+                    key={n.id}
+                    className={`flex items-start gap-3 px-4 py-3 border-b border-surface-50 transition-colors ${
+                      !n.isRead ? 'bg-brand-50/30' : 'hover:bg-surface-25'
+                    }`}
+                  >
+                    <div className="mt-0.5 flex-shrink-0">
+                      {TYPE_ICONS[n.type] || <Bell size={16} className="text-surface-400" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm ${!n.isRead ? 'font-semibold text-surface-800' : 'font-medium text-surface-600'}`}>
                         {n.title}
                       </p>
-                      <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(n.createdAt).toLocaleString()}
-                      </p>
+                      <p className="text-xs text-surface-400 mt-0.5 line-clamp-2">{n.message}</p>
                     </div>
-                    {!n.isRead && (
-                      <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full mt-1.5 flex-shrink-0" />
+                    {n.isRead ? (
+                      <CheckCheck size={14} className="text-surface-300 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <Check size={14} className="text-brand-600 flex-shrink-0 mt-0.5" />
                     )}
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

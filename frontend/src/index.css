@@ -1,7 +1,229 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+@layer base {
+  :root {
+    --brand-50:  238 245 255;
+    --brand-100: 217 232 255;
+    --brand-200: 187 218 255;
+    --brand-300: 140 196 255;
+    --brand-400: 84  165 255;
+    --brand-500: 43  133 255;
+    --brand-600: 0   112 243;
+    --brand-700: 0   91  207;
+    --brand-800: 0   74  168;
+    --brand-900: 0   61  133;
+    --brand-950: 0   38  87;
+
+    --surface-50:  249 250 251;
+    --surface-100: 242 244 247;
+    --surface-200: 208 213 221;
+    --surface-300: 152 162 179;
+    --surface-400: 102 112 133;
+    --surface-500: 71  84  103;
+    --surface-600: 52  64  84;
+    --surface-700: 29  41  57;
+    --surface-800: 16  24  40;
+    --surface-900: 12  17  29;
+
+    --radius: 0.625rem;
+    --success: 16  185 129;
+    --warning: 245 158 11;
+    --danger:  239 68  68;
+  }
+
+  body {
+    @apply bg-surface-50 text-surface-900 antialiased font-sans;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  * {
+    @apply border-surface-150;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-surface-800 tracking-tight;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #98a2b3; }
+}
+
+@layer components {
+  /* ── Buttons ──────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-150
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2
+           disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 shadow-brand;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white text-surface-700 border border-surface-200 hover:bg-surface-50 hover:border-surface-300 active:bg-surface-100 shadow-xs;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm;
+  }
+
+  .btn-ghost {
+    @apply btn text-surface-500 hover:bg-surface-100 hover:text-surface-800 active:bg-surface-150;
+  }
+
+  .btn-sm {
+    @apply h-8 px-3 text-xs rounded-md gap-1.5;
+  }
+
+  .btn-lg {
+    @apply h-11 px-6 text-base;
+  }
+
+  .btn-icon {
+    @apply h-9 w-9 p-0 rounded-lg;
+  }
+
+  /* ── Inputs ───────────────────────────────────────── */
+  .input {
+    @apply flex h-10 w-full rounded-lg border border-surface-200 bg-white px-3.5 py-2 text-sm text-surface-900
+           placeholder:text-surface-400 transition-all duration-150
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/20 focus-visible:border-brand-600
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .input-error {
+    @apply border-red-300 focus-visible:ring-red-500/20 focus-visible:border-red-500;
+  }
+
+  .textarea {
+    @apply input min-h-[80px] resize-y;
+  }
+
+  .select {
+    @apply input appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1.25em_1.25em] pr-9;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23667085' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  }
+
+  .label {
+    @apply text-sm font-medium text-surface-700 leading-none;
+  }
+
+  .form-item {
+    @apply space-y-1.5;
+  }
+
+  .form-message {
+    @apply text-[13px] text-red-500 mt-1;
+  }
+
+  /* ── Cards ────────────────────────────────────────── */
+  .card {
+    @apply rounded-xl border border-surface-150 bg-white shadow-card;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-card-hover hover:border-surface-200 transition-all duration-200;
+  }
+
+  .card-header {
+    @apply flex flex-col space-y-1.5 p-6;
+  }
+
+  .card-title {
+    @apply text-base font-semibold leading-none tracking-tight text-surface-800;
+  }
+
+  .card-description {
+    @apply text-sm text-surface-500;
+  }
+
+  .card-content {
+    @apply p-6 pt-0;
+  }
+
+  .card-footer {
+    @apply flex items-center p-6 pt-0;
+  }
+
+  /* ── Badges ───────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide uppercase transition-colors;
+  }
+
+  .badge-success {
+    @apply badge bg-emerald-50 text-emerald-700 border-emerald-200/60;
+  }
+
+  .badge-warning {
+    @apply badge bg-amber-50 text-amber-700 border-amber-200/60;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-50 text-red-700 border-red-200/60;
+  }
+
+  .badge-info {
+    @apply badge bg-blue-50 text-blue-700 border-blue-200/60;
+  }
+
+  .badge-neutral {
+    @apply badge bg-surface-100 text-surface-600 border-surface-200;
+  }
+
+  .badge-brand {
+    @apply badge bg-brand-50 text-brand-700 border-brand-200/60;
+  }
+
+  /* ── Tables ───────────────────────────────────────── */
+  .table-wrapper {
+    @apply w-full overflow-auto;
+  }
+
+  .table {
+    @apply w-full caption-bottom text-sm;
+  }
+
+  .table thead {
+    @apply border-b border-surface-100;
+  }
+
+  .table th {
+    @apply h-11 px-4 text-left align-middle font-medium text-surface-500 text-xs uppercase tracking-wider;
+  }
+
+  .table tbody {
+    @apply divide-y divide-surface-100;
+  }
+
+  .table td {
+    @apply px-4 py-3.5 align-middle;
+  }
+
+  .table tbody tr {
+    @apply transition-colors hover:bg-surface-25;
+  }
+
+  /* ── Skeleton ─────────────────────────────────────── */
+  .skeleton {
+    @apply animate-pulse rounded-md bg-surface-100;
+  }
+
+  /* ── Dividers ─────────────────────────────────────── */
+  .divider {
+    @apply border-t border-surface-100;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
 }

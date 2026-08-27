@@ -36,3 +36,20 @@ logs/
 
 # ─── Freebuff ──────────────────────────────────────────
 .freebuff/
+
+# ─── Docs (internal planning, not for repo) ───────────
+docs/
+
+# ─── Frontend preview (dev only) ──────────────────────
+frontend/preview.html
+
+# ─── Temp / Backup ────────────────────────────────────
+*.tmp
+*.bak
+*.orig
+*.sql.bak
+
+# ─── Environment at root ──────────────────────────────
+.env.*
+!vercel.json
+!docker-compose.yml

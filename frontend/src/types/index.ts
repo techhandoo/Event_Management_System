@@ -87,3 +87,17 @@ export interface Analytics {
   totalBookings: number;
   totalRevenueCents: number;
 }
+
+// ─── Password Reset ────────────────────────────────────
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+export interface ValidateResetTokenResponse {
+  valid: boolean;
+  email: string;
+}

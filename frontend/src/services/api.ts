@@ -51,4 +51,25 @@ api.interceptors.response.use(
   }
 );
 
+// ─── Auth endpoints ──────────────────────────────────
+export const authApi = {
+  login: (data: { email: string; password: string }) =>
+    api.post<unknown, { data: { data: { accessToken: string; refreshToken: string; tokenType: string; expiresIn: number; user: import('../types').User } } }>('/auth/login', data),
+
+  register: (data: { email: string; password: string; fullName: string }) =>
+    api.post<unknown, { data: { data: { accessToken: string; refreshToken: string; tokenType: string; expiresIn: number; user: import('../types').User } } }>('/auth/register', data),
+
+  refresh: (refreshToken: string) =>
+    api.post('/auth/refresh', null, { headers: { 'Refresh-Token': refreshToken } }),
+
+  forgotPassword: (email: string) =>
+    api.post<unknown, { data: { data: { message: string } } }>('/auth/forgot-password', { email }),
+
+  resetPassword: (token: string, newPassword: string) =>
+    api.post<unknown, { data: { data: { message: string } } }>('/auth/reset-password', { token, newPassword }),
+
+  validateResetToken: (token: string) =>
+    api.get<unknown, { data: { data: { valid: boolean; email: string } } }>(`/auth/validate-reset-token?token=${token}`),
+};
+
 export default api;
