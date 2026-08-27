@@ -1,8 +1,9 @@
 package com.eventmanager.controller;
 
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaAdmin;
@@ -14,6 +15,7 @@ import java.sql.Connection;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 public class HealthController {
@@ -75,11 +77,11 @@ public class HealthController {
             health.put("status", "DOWN");
         }
 
-        // Check Kafka
-        try {
-            Map<String, org.apache.kafka.common.TopicDescription> topics =
-                    kafkaAdmin.describeTopics().getTopicDescriptions();
-            dependencies.put("kafka", "UP (topics: " + topics.size() + ")");
+        // Check Kafka via AdminClient
+        try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfig())) {
+            ListTopicsResult topics = adminClient.listTopics();
+            Set<String> names = topics.names().get();
+            dependencies.put("kafka", "UP (topics: " + names.size() + ")");
         } catch (Exception e) {
             log.warn("Health check: kafka DOWN - {}", e.getMessage());
             dependencies.put("kafka", "DOWN: " + e.getMessage());
