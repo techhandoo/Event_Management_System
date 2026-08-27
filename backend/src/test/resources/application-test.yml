@@ -8,6 +8,8 @@ spring:
   flyway:
     enabled: true
   kafka:
+    listener:
+      missing-topics-fatal: false
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -22,6 +24,11 @@ spring:
       properties:
         spring.json.trusted.packages: "com.eventmanager.kafka.event"
         spring.json.add.type.headers: false
+  # Exclude Redis auto-configuration for tests (no Redis container in CI)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
 app:
   jwt:

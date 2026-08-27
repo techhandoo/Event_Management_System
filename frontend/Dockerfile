@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Cache node_modules
 COPY package.json package-lock.json* ./
-RUN npm ci --prefer-offline
+RUN npm ci
 
 # Copy source and build
 COPY . .

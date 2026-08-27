@@ -1,12 +1,14 @@
 package com.eventmanager.controller;
 
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,6 +17,7 @@ import java.sql.Connection;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 @RestController
@@ -23,15 +26,14 @@ public class HealthController {
     private static final Logger log = LoggerFactory.getLogger(HealthController.class);
 
     private final DataSource dataSource;
-    private final StringRedisTemplate redisTemplate;
-    private final KafkaAdmin kafkaAdmin;
+    private final String kafkaBootstrapServers;
+    @Autowired(required = false)
+    private StringRedisTemplate redisTemplate;
 
     public HealthController(DataSource dataSource,
-                            StringRedisTemplate redisTemplate,
-                            KafkaAdmin kafkaAdmin) {
+                            @Value("${spring.kafka.bootstrap-servers:localhost:9092}") String kafkaBootstrapServers) {
         this.dataSource = dataSource;
-        this.redisTemplate = redisTemplate;
-        this.kafkaAdmin = kafkaAdmin;
+        this.kafkaBootstrapServers = kafkaBootstrapServers;
     }
 
     /**
@@ -63,25 +65,33 @@ public class HealthController {
         }
 
         // Check Redis
-        try {
-            String pong = redisTemplate.getConnectionFactory().getConnection().ping();
-            if ("PONG".equalsIgnoreCase(pong)) {
-                dependencies.put("redis", "UP");
-            } else {
-                dependencies.put("redis", "DOWN");
+        if (redisTemplate != null) {
+            try {
+                String pong = redisTemplate.getConnectionFactory().getConnection().ping();
+                if ("PONG".equalsIgnoreCase(pong)) {
+                    dependencies.put("redis", "UP");
+                } else {
+                    dependencies.put("redis", "DOWN");
+                    health.put("status", "DEGRADED");
+                }
+            } catch (Exception e) {
+                log.warn("Health check: redis DOWN - {}", e.getMessage());
+                dependencies.put("redis", "DOWN: " + e.getMessage());
                 health.put("status", "DEGRADED");
             }
-        } catch (Exception e) {
-            log.warn("Health check: redis DOWN - {}", e.getMessage());
-            dependencies.put("redis", "DOWN: " + e.getMessage());
-            health.put("status", "DOWN");
+        } else {
+            dependencies.put("redis", "DISABLED");
         }
 
         // Check Kafka via AdminClient
-        try (AdminClient adminClient = AdminClient.create(kafkaAdmin.getConfig())) {
-            ListTopicsResult topics = adminClient.listTopics();
-            Set<String> names = topics.names().get();
-            dependencies.put("kafka", "UP (topics: " + names.size() + ")");
+        try {
+            Properties props = new Properties();
+            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
+            try (AdminClient adminClient = AdminClient.create(props)) {
+                ListTopicsResult topics = adminClient.listTopics();
+                Set<String> names = topics.names().get();
+                dependencies.put("kafka", "UP (topics: " + names.size() + ")");
+            }
         } catch (Exception e) {
             log.warn("Health check: kafka DOWN - {}", e.getMessage());
             dependencies.put("kafka", "DOWN: " + e.getMessage());

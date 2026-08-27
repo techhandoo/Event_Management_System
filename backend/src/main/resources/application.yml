@@ -41,6 +41,8 @@ spring:
 
   # ─── Kafka ───────────────────────────────────────────
   kafka:
+    listener:
+      missing-topics-fatal: false
     bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
