@@ -1,13 +1,15 @@
 spring:
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
   flyway:
     enabled: true
   kafka:
+    listener:
+      missing-topics-fatal: false
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -22,6 +24,11 @@ spring:
       properties:
         spring.json.trusted.packages: "com.eventmanager.kafka.event"
         spring.json.add.type.headers: false
+  # Exclude Redis auto-configuration for tests (no Redis container in CI)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
 app:
   jwt:
@@ -30,6 +37,10 @@ app:
     refresh-token-expiration-ms: 604800000
     token-prefix: "Bearer "
     authorization-header: "Authorization"
+  email:
+    resend-api-key: re_placeholder
+    from-address: noreply@eventry.app
+    frontend-url: http://localhost:5173
 
 logging:
   level:

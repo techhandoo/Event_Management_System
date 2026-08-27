@@ -1,6 +1,6 @@
 # 🎫 FreeBuff — Event Management Platform
 
-A full-stack event management platform built with **Spring Boot**, **React**, **Kafka**, and **MySQL**. Users can register, authenticate, create and manage events, and handle event booking workflows with real-time notifications.
+A full-stack event management platform built with **Spring Boot**, **React**, **Kafka**, and **PostgreSQL**. Users can register, authenticate, create and manage events, and handle event booking workflows with real-time notifications.
 
 ![Architecture](docs/architecture.md)
 ![API Docs](#api-documentation)
@@ -25,7 +25,7 @@ A full-stack event management platform built with **Spring Boot**, **React**, **
 
 ### Production
 - 🧪 **Unit Tests** — JUnit 5 + Mockito for all services (14 test classes)
-- 🔗 **Integration Tests** — Testcontainers with real MySQL + Kafka
+- 🔗 **Integration Tests** — Testcontainers with real PostgreSQL + Kafka
 - 🚀 **CI/CD** — GitHub Actions pipeline (build → test → Docker → deploy)
 - 🌐 **Deployment** — Render (backend) + Vercel (frontend)
 
@@ -35,7 +35,7 @@ A full-stack event management platform built with **Spring Boot**, **React**, **
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  React SPA   │────▶│  Spring Boot │────▶│   MySQL 8.0  │
+│  React SPA   │────▶│  Spring Boot │────▶│ PostgreSQL 16 │
 │  (Vite/TW)   │     │   (Java 17)  │     │              │
 └──────────────┘     └──────┬───────┘     └──────────────┘
                             │
@@ -63,7 +63,7 @@ event-manager/
 │   │   ├── repository/               # Spring Data JPA repositories
 │   │   ├── security/                 # JWT provider, filter, UserDetailsService
 │   │   └── service/                  # Business logic (5 services)
-│   ├── src/test/                     # Unit + integration tests
+│   ├── src/test/                     # Unit + PostgreSQL integration tests
 │   ├── Dockerfile                    # Multi-stage build
 │   └── pom.xml
 ├── frontend/                         # React SPA
@@ -92,7 +92,7 @@ event-manager/
 
 ### 1. Start Infrastructure
 ```bash
-docker-compose up -d mysql kafka zookeeper redis
+docker-compose up -d postgres kafka zookeeper redis
 ```
 
 ### 2. Start Backend
@@ -165,7 +165,7 @@ Once the backend is running, visit:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `JWT_SECRET` | dev secret | JWT signing key (256-bit min) |
-| `SPRING_DATASOURCE_URL` | localhost:3306 | MySQL connection URL |
+| `SPRING_DATASOURCE_URL` | localhost:5432 | PostgreSQL connection URL |
 | `SPRING_KAFKA_BOOTSTRAP_SERVERS` | localhost:9092 | Kafka broker |
 | `SPRING_DATA_REDIS_HOST` | localhost | Redis host |
 
@@ -190,7 +190,7 @@ Once the backend is running, visit:
 | Java Files | 61 |
 | React Components | 19 |
 | Docker Services | 6 |
-| MySQL Indexes | 8 composite |
+| PostgreSQL Indexes | 8 composite |
 | Kafka Topics | 4 |
 | Test Files | 5 services + 1 integration |
 

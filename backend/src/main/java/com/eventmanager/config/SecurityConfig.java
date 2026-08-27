@@ -42,6 +42,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/events/search").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events/*/availability").permitAll()
                 .requestMatchers("/api/health").permitAll()
+                .requestMatchers("/api/uptime").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // Admin endpoints

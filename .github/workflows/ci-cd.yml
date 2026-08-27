@@ -41,7 +41,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
+      - name: Set up JDK ${{ env.JAVA_VERSION }} + Maven
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
@@ -49,17 +49,17 @@ jobs:
           cache: 'maven'
 
       - name: Build with Maven
-        run: ./mvnw clean compile -B
+        run: mvn clean compile -B
 
       - name: Run unit tests
-        run: ./mvnw test -B -Dspring.profiles.active=test
+        run: mvn test -B -Dspring.profiles.active=test
         env:
-          DATABASE_URL: jdbc:postgresql://localhost:5432/eventry_test
-          DATABASE_USERNAME: test
-          DATABASE_PASSWORD: test
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/eventry_test
+          SPRING_DATASOURCE_USERNAME: test
+          SPRING_DATASOURCE_PASSWORD: test
 
       - name: Package
-        run: ./mvnw package -DskipTests -B
+        run: mvn package -DskipTests -B
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4

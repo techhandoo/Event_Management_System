@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, LogOut, ChevronDown, Search } from 'lucide-react';
+import { LogOut, ChevronDown, Search } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 import StatusBadge from './ui/StatusBadge';
 

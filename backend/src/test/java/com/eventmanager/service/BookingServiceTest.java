@@ -77,12 +77,12 @@ class BookingServiceTest {
         when(eventRepository.save(any(Event.class))).thenReturn(event);
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
         when(bookingMapper.toResponse(any(Booking.class))).thenReturn(
-                BookingResponse.builder().id(1L).status("CONFIRMED").build());
+                BookingResponse.builder().id(1L).status(BookingStatus.CONFIRMED).build());
 
         BookingResponse response = bookingService.createBooking(bookingRequest, "user@example.com");
 
         assertNotNull(response);
-        assertEquals("CONFIRMED", response.getStatus());
+        assertEquals(BookingStatus.CONFIRMED, response.getStatus());
         assertEquals(12, event.getBookedCount()); // 10 + 2
         verify(bookingEventProducer).sendBookingEvent(any());
     }
@@ -99,7 +99,8 @@ class BookingServiceTest {
 
     @Test
     void createBookingInsufficientCapacityThrows() {
-        event.setCapacity(15).setBookedCount(14); // only 1 left, but booking 2
+        event.setCapacity(15);
+        event.setBookedCount(14); // only 1 left, but booking 2
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(eventRepository.findById(10L)).thenReturn(Optional.of(event));
         when(bookingRepository.existsByUserIdAndEventIdAndStatusIn(eq(1L), eq(10L), anyList())).thenReturn(false);
@@ -132,11 +133,11 @@ class BookingServiceTest {
         when(eventRepository.save(any(Event.class))).thenReturn(event);
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
         when(bookingMapper.toResponse(any(Booking.class))).thenReturn(
-                BookingResponse.builder().id(1L).status("CANCELLED").build());
+                BookingResponse.builder().id(1L).status(BookingStatus.CANCELLED).build());
 
         BookingResponse response = bookingService.cancelBooking(1L, "user@example.com");
 
-        assertEquals("CANCELLED", response.getStatus());
+        assertEquals(BookingStatus.CANCELLED, response.getStatus());
         assertEquals(48, event.getBookedCount()); // 50 - 2
         verify(bookingEventProducer).sendBookingEvent(any());
     }
