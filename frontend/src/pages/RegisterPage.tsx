@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, Zap, ArrowRight, Users, Shield, Ticket } from 'lucide-react';
+import { Mail, Lock, User, Zap, ArrowRight, Users, Ticket } from 'lucide-react';
 
 interface RegisterForm { fullName: string; email: string; password: string; }
 
