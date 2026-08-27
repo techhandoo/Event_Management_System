@@ -13,6 +13,7 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.kafka.retrytopic.DltStrategy;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
@@ -33,7 +34,7 @@ public class BookingEventConsumer {
     @RetryableTopic(
         attempts = "3",
         backoff = @Backoff(delay = 1000, multiplier = 2.0),
-        dltStrategy = "ALWAYS_RETRY_ON_ERROR",
+        dltStrategy = DltStrategy.ALWAYS_RETRY_ON_ERROR,
         include = { Exception.class }
     )
     @KafkaListener(topics = "booking.events", groupId = "booking-service")

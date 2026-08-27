@@ -1,16 +1,27 @@
 #!/bin/sh
-# Maven Wrapper startup script
+# ═══════════════════════════════════════════════════════════════
+# Maven Wrapper — detects local Maven or falls back to PATH mvn
+# ═══════════════════════════════════════════════════════════════
 set -e
 
-MAVEN_VERSION="3.9.6"
-MAVEN_HOME="${HOME}/.m2/wrapper/dists/apache-maven-${MAVEN_VERSION}"
-MAVEN_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.zip"
-
-if [ ! -d "$MAVEN_HOME" ]; then
-    echo "Downloading Maven ${MAVEN_VERSION}..."
-    mkdir -p "$MAVEN_HOME"
-    curl -fsSL "$MAVEN_URL" | unzip - -d "${HOME}/.m2/wrapper/dists/" > /dev/null 2>&1
-    mv "${HOME}/.m2/wrapper/dists/apache-maven-${MAVEN_VERSION}"/* "$MAVEN_HOME/" 2>/dev/null || true
+# ─── Check if mvn is already on PATH ─────────────────────
+if command -v mvn > /dev/null 2>&1; then
+    exec mvn "$@"
 fi
 
-exec "$MAVEN_HOME/bin/mvn" "$@"
+# ─── Search for Maven in ~/.m2/wrapper/dists ─────────────
+for DIST_DIR in "${HOME}/.m2/wrapper/dists/apache-maven-"*; do
+    if [ -d "$DIST_DIR" ]; then
+        for SUB_DIR in "$DIST_DIR"/*/; do
+            if [ -f "${SUB_DIR}bin/mvn" ]; then
+                exec "${SUB_DIR}bin/mvn" "$@"
+            fi
+        done
+    fi
+done
+
+# ─── Fallback message ────────────────────────────────────
+echo "ERROR: mvn not found on PATH and no local Maven installation detected." >&2
+echo "Install Maven: https://maven.apache.org/install.html" >&2
+echo "Or use: sdk install maven" >&2
+exit 1
