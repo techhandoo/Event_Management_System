@@ -98,7 +98,7 @@ class EventServiceTest {
         when(userRepository.findByEmail("org@example.com")).thenReturn(Optional.of(organizer));
         when(eventRepository.save(any(Event.class))).thenReturn(event);
         when(eventMapper.toResponse(any(Event.class))).thenReturn(
-                EventResponse.builder().id(10L).title("Test Event").status("PUBLISHED").build());
+                EventResponse.builder().id(10L).title("Test Event").status(EventStatus.PUBLISHED).build());
 
         EventResponse response = eventService.publishEvent(10L, "org@example.com");
 
