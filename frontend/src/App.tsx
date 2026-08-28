@@ -16,6 +16,7 @@ import DashboardPage from './pages/DashboardPage';
 import OrganizerDashboardPage from './pages/OrganizerDashboardPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import CreateEventPage from './pages/CreateEventPage';
+import EditEventPage from './pages/EditEventPage';
 import { ReactNode } from 'react';
 
 function ProtectedRoute({ children, roles }: { children: ReactNode; roles?: string[] }) {
@@ -46,6 +47,7 @@ function App() {
             <Route path="/events" element={<EventsPage />} />
             <Route path="/events/:id" element={<EventDetailPage />} />
             <Route path="/events/create" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><CreateEventPage /></ProtectedRoute>} />
+            <Route path="/events/:id/edit" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><EditEventPage /></ProtectedRoute>} />
             <Route path="/my-bookings" element={<ProtectedRoute><MyBookingsPage /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             <Route path="/organizer" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><OrganizerDashboardPage /></ProtectedRoute>} />
