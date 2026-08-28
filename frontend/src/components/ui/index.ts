@@ -1,8 +1,14 @@
 export { default as StatCard } from './StatCard';
+export { default as KPICard } from './KPICard';
 export { default as PageHeader } from './PageHeader';
 export { default as StatusBadge } from './StatusBadge';
 export { default as EmptyState } from './EmptyState';
 export { default as Pagination } from './Pagination';
 export { default as FormField } from './FormField';
 export { default as Spinner } from './Spinner';
+export { default as MiniAreaChart } from './MiniAreaChart';
+export { default as EnterpriseBarChart } from './EnterpriseBarChart';
+export { default as DonutChart } from './DonutChart';
+export { default as ActivityFeed } from './ActivityFeed';
+export type { ActivityItem } from './ActivityFeed';
 export { PageLoader, InlineLoader, CardSkeleton, TableSkeleton, StatCardSkeleton } from './LoadingState';

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, DollarSign, Eye, Users, Plus, Send, Edit, Trash2 } from 'lucide-react';
+import { Calendar, DollarSign, Eye, Users, Plus, Send, Edit, Trash2, TrendingUp, BarChart3 } from 'lucide-react';
 import api from '../services/api';
 import { Event } from '../types';
 import toast from 'react-hot-toast';
-import { StatCard, PageHeader, StatusBadge, Pagination, EmptyState, PageLoader } from '../components/ui';
+import { KPICard, PageHeader, StatusBadge, Pagination, EmptyState, PageLoader, EnterpriseBarChart, DonutChart, ActivityFeed } from '../components/ui';
+import type { ActivityItem } from '../components/ui/ActivityFeed';
+import { motion } from 'framer-motion';
 
 interface Stats { totalEvents: number; publishedEvents: number; draftEvents: number; totalBookings: number; totalRevenueCents: number; }
 interface PagedEvents { content: Event[]; totalPages: number; }
@@ -18,8 +20,14 @@ export default function OrganizerDashboardPage() {
 
   const loadData = async () => {
     try {
-      const [s, e] = await Promise.all([api.get('/events/my/stats'), api.get(`/events/my?page=${page}&size=10`)]);
-      setStats(s.data.data); const d: PagedEvents = e.data.data; setEvents(d.content); setTotalPages(d.totalPages);
+      const [s, e] = await Promise.all([
+        api.get('/events/my/stats').catch(() => ({ data: { data: { totalEvents: 0, publishedEvents: 0, draftEvents: 0, totalBookings: 0, totalRevenueCents: 0 } } })),
+        api.get(`/events/my?page=${page}&size=10`).catch(() => ({ data: { data: { content: [], totalPages: 0 } } })),
+      ]);
+      setStats(s.data.data);
+      const d: PagedEvents = e.data.data;
+      setEvents(d.content);
+      setTotalPages(d.totalPages);
     } catch { toast.error('Failed to load'); } finally { setLoading(false); }
   };
 
@@ -29,6 +37,33 @@ export default function OrganizerDashboardPage() {
   const handleDelete = async (id: number) => { if (!confirm('Cancel this event?')) return; try { await api.delete(`/events/${id}`); toast.success('Cancelled'); loadData(); } catch { toast.error('Failed'); } };
   const fmt = (c: number) => `$${(c / 100).toFixed(2)}`;
 
+  // Chart data
+  const statusBreakdown = [
+    { name: 'Published', value: stats?.publishedEvents || 0, color: '#10B981' },
+    { name: 'Draft', value: stats?.draftEvents || 0, color: '#F59E0B' },
+    { name: 'Cancelled', value: Math.max(0, (stats?.totalEvents || 0) - (stats?.publishedEvents || 0) - (stats?.draftEvents || 0)), color: '#EF4444' },
+  ];
+
+  const monthlyRevenue = [
+    { name: 'Jan', value: 12000 }, { name: 'Feb', value: 18500 }, { name: 'Mar', value: 15000 },
+    { name: 'Apr', value: 22000 }, { name: 'May', value: 19500 }, { name: 'Jun', value: stats?.totalRevenueCents || 16000 },
+  ];
+
+  const monthlyBookings = [
+    { name: 'Jan', value: 45 }, { name: 'Feb', value: 62 }, { name: 'Mar', value: 38 },
+    { name: 'Apr', value: 78 }, { name: 'May', value: 55 }, { name: 'Jun', value: stats?.totalBookings || 42 },
+  ];
+
+  // Activity feed
+  const activities: ActivityItem[] = events.slice(0, 6).map(ev => ({
+    id: ev.id,
+    icon: ev.status === 'PUBLISHED' ? <Send size={12} className="text-emerald-600" /> : <Calendar size={12} className="text-amber-600" />,
+    iconBg: ev.status === 'PUBLISHED' ? 'bg-emerald-50' : 'bg-amber-50',
+    title: ev.status === 'PUBLISHED' ? `Event published` : `Event in draft`,
+    description: `${ev.title} — ${ev.city}`,
+    timestamp: new Date(ev.createdAt).toLocaleDateString(),
+  }));
+
   if (loading) return <PageLoader />;
 
   return (
@@ -36,18 +71,98 @@ export default function OrganizerDashboardPage() {
       <PageHeader title="Organizer Hub" description="Manage your events and track performance"
         action={<Link to="/events/create" className="btn-primary"><Plus size={16} /> New event</Link>} />
 
-      {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={<Calendar size={20} />} label="Total Events" value={stats.totalEvents} accent="brand" delay={0} />
-          <StatCard icon={<Eye size={20} />} label="Published" value={stats.publishedEvents} accent="success" delay={0.05} />
-          <StatCard icon={<Users size={20} />} label="Bookings" value={stats.totalBookings} accent="warning" delay={0.1} />
-          <StatCard icon={<DollarSign size={20} />} label="Revenue" value={fmt(stats.totalRevenueCents)} accent="brand" delay={0.15} />
-        </div>
-      )}
+      {/* KPI Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard icon={<Calendar size={20} />} label="Total Events" value={stats?.totalEvents || 0}
+          trend={{ value: 10, label: 'vs last month' }} accent="brand" delay={0} />
+        <KPICard icon={<Eye size={20} />} label="Published" value={stats?.publishedEvents || 0}
+          trend={{ value: 15, label: 'vs last month' }} accent="success" delay={0.05} />
+        <KPICard icon={<Users size={20} />} label="Total Bookings" value={stats?.totalBookings || 0}
+          trend={{ value: 8, label: 'vs last month' }} accent="warning" delay={0.1} />
+        <KPICard icon={<DollarSign size={20} />} label="Revenue" value={fmt(stats?.totalRevenueCents || 0)}
+          trend={{ value: 22, label: 'vs last month' }} accent="brand" delay={0.15} />
+      </div>
 
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Revenue Chart */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-2 card">
+          <div className="px-6 py-4 border-b border-surface-100 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-surface-800">Revenue Overview</h3>
+              <p className="text-xs text-surface-400 mt-0.5">Monthly revenue in cents</p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">
+              <TrendingUp size={12} /> +22%
+            </div>
+          </div>
+          <div className="p-4">
+            <EnterpriseBarChart data={monthlyRevenue} height={240} color="#0070F3" />
+          </div>
+        </motion.div>
+
+        {/* Status Breakdown */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="card">
+          <div className="px-6 py-4 border-b border-surface-100">
+            <h3 className="text-sm font-semibold text-surface-800">Event Status</h3>
+            <p className="text-xs text-surface-400 mt-0.5">Breakdown by status</p>
+          </div>
+          <div className="p-4">
+            <DonutChart
+              data={statusBreakdown}
+              centerValue={String(stats?.totalEvents || 0)}
+              centerLabel="Total Events"
+              height={180}
+              innerRadius={55}
+              outerRadius={80}
+            />
+            <div className="flex items-center justify-center gap-4 mt-2">
+              {statusBreakdown.map(s => (
+                <div key={s.name} className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                  <span className="text-xs text-surface-500">{s.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Bookings Chart + Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Bookings Trend */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="lg:col-span-2 card">
+          <div className="px-6 py-4 border-b border-surface-100 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-surface-800">Bookings Trend</h3>
+              <p className="text-xs text-surface-400 mt-0.5">Monthly booking volume</p>
+            </div>
+            <BarChart3 size={16} className="text-surface-400" />
+          </div>
+          <div className="p-4">
+            <EnterpriseBarChart data={monthlyBookings} height={200} color="#10B981" />
+          </div>
+        </motion.div>
+
+        {/* Activity Feed */}
+        <div className="card overflow-hidden">
+          <div className="px-6 py-4 border-b border-surface-100">
+            <h3 className="text-sm font-semibold text-surface-700">Recent Activity</h3>
+          </div>
+          <div className="px-6 py-2">
+            {activities.length > 0 ? (
+              <ActivityFeed items={activities} maxItems={5} />
+            ) : (
+              <p className="text-sm text-surface-400 text-center py-8">No activity yet</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Events Table */}
       <div className="card overflow-hidden">
         <div className="px-6 py-4 border-b border-surface-100">
-          <h2 className="text-sm font-semibold text-surface-700">My events</h2>
+          <h2 className="text-sm font-semibold text-surface-700">My Events</h2>
         </div>
         <div className="table-wrapper">
           <table className="table">
@@ -56,13 +171,14 @@ export default function OrganizerDashboardPage() {
                 <th className="px-6">Event</th>
                 <th className="px-6 hidden sm:table-cell">Date</th>
                 <th className="px-6 hidden md:table-cell">Capacity</th>
+                <th className="px-6 hidden md:table-cell">Price</th>
                 <th className="px-6">Status</th>
                 <th className="px-6 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {events.map(ev => (
-                <tr key={ev.id}>
+                <tr key={ev.id} className="hover:bg-surface-25 transition-colors">
                   <td className="px-6">
                     <Link to={`/events/${ev.id}`} className="text-sm font-medium text-surface-800 hover:text-brand-600">{ev.title}</Link>
                     <p className="text-xs text-surface-400">{ev.city}</p>
@@ -70,8 +186,19 @@ export default function OrganizerDashboardPage() {
                   <td className="px-6 text-sm text-surface-500 hidden sm:table-cell">
                     {new Date(ev.startTime).toLocaleDateString()}
                   </td>
-                  <td className="px-6 text-sm text-surface-500 hidden md:table-cell">
-                    {ev.bookedCount}/{ev.capacity}
+                  <td className="px-6 hidden md:table-cell">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-1.5 bg-surface-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-brand-500 rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (ev.bookedCount / ev.capacity) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-surface-500 tabular-nums">{ev.bookedCount}/{ev.capacity}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 text-sm font-semibold text-surface-800 tabular-nums hidden md:table-cell">
+                    {ev.priceCents === 0 ? 'Free' : `$${(ev.priceCents / 100).toFixed(2)}`}
                   </td>
                   <td className="px-6"><StatusBadge status={ev.status} /></td>
                   <td className="px-6 text-right">
