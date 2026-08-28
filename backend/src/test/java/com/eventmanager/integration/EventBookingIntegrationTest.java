@@ -6,6 +6,8 @@ import com.eventmanager.dto.request.RegisterRequest;
 import com.eventmanager.dto.response.AuthResponse;
 import com.eventmanager.dto.response.BookingResponse;
 import com.eventmanager.dto.response.EventResponse;
+import com.eventmanager.model.enums.BookingStatus;
+import com.eventmanager.model.enums.EventStatus;
 import com.eventmanager.service.AuthService;
 import com.eventmanager.service.BookingService;
 import com.eventmanager.service.EventService;
@@ -120,7 +122,7 @@ class EventBookingIntegrationTest {
     void publishEvent() {
         EventResponse response = eventService.publishEvent(eventId, "organizer@test.com");
 
-        assertEquals("PUBLISHED", response.getStatus());
+        assertEquals(EventStatus.PUBLISHED, response.getStatus());
     }
 
     @Test
@@ -134,7 +136,7 @@ class EventBookingIntegrationTest {
         BookingResponse response = bookingService.createBooking(request, "attendee@test.com");
 
         assertNotNull(response);
-        assertEquals("CONFIRMED", response.getStatus());
+        assertEquals(BookingStatus.CONFIRMED, response.getStatus());
         assertEquals(2, response.getQuantity());
         assertEquals(2000L, response.getTotalCents());
     }
@@ -160,7 +162,7 @@ class EventBookingIntegrationTest {
 
         BookingResponse response = bookingService.cancelBooking(bookingId, "attendee@test.com");
 
-        assertEquals("CANCELLED", response.getStatus());
+        assertEquals(BookingStatus.CANCELLED, response.getStatus());
     }
 
     @Test
