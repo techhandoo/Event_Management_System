@@ -13,6 +13,7 @@ import com.eventmanager.model.User;
 import com.eventmanager.model.enums.EventStatus;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -27,16 +28,15 @@ public class EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final EventMapper eventMapper;
-    private final EventEventProducer eventEventProducer;
+    @Autowired(required = false)
+    private EventEventProducer eventEventProducer;
 
     public EventService(EventRepository eventRepository,
                         UserRepository userRepository,
-                        EventMapper eventMapper,
-                        EventEventProducer eventEventProducer) {
+                        EventMapper eventMapper) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.eventMapper = eventMapper;
-        this.eventEventProducer = eventEventProducer;
     }
 
     @Transactional
@@ -144,7 +144,7 @@ public class EventService {
                 event.getTitle(),
                 "CANCELLED"
         );
-        eventEventProducer.sendEventEvent(kafkaEvent);
+        if (eventEventProducer != null) eventEventProducer.sendEventEvent(kafkaEvent);
     }
 
     @Caching(evict = {
@@ -177,7 +177,7 @@ public class EventService {
                 event.getTitle(),
                 "PUBLISHED"
         );
-        eventEventProducer.sendEventEvent(kafkaEvent);
+        if (eventEventProducer != null) eventEventProducer.sendEventEvent(kafkaEvent);
 
         return eventMapper.toResponse(event);
     }
