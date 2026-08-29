@@ -13,11 +13,14 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.retrytopic.DltStrategy;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnBean(KafkaTemplate.class)
 public class BookingEventConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(BookingEventConsumer.class);

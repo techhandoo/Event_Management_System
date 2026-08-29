@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -46,6 +47,8 @@ class EventServiceTest {
 
     @BeforeEach
     void setUp() {
+        ReflectionTestUtils.setField(eventService, "eventEventProducer", eventEventProducer);
+
         organizer = User.builder()
                 .id(1L).email("org@example.com").fullName("Org User").role(Role.ORGANIZER).isActive(true).build();
 
