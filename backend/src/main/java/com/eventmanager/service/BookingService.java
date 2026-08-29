@@ -15,6 +15,7 @@ import com.eventmanager.model.enums.BookingStatus;
 import com.eventmanager.repository.BookingRepository;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,18 +30,17 @@ public class BookingService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
-    private final BookingEventProducer bookingEventProducer;
+    @Autowired(required = false)
+    private BookingEventProducer bookingEventProducer;
 
     public BookingService(BookingRepository bookingRepository,
                           EventRepository eventRepository,
                           UserRepository userRepository,
-                          BookingMapper bookingMapper,
-                          BookingEventProducer bookingEventProducer) {
+                          BookingMapper bookingMapper) {
         this.bookingRepository = bookingRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.bookingMapper = bookingMapper;
-        this.bookingEventProducer = bookingEventProducer;
     }
 
     @Transactional
@@ -96,7 +96,7 @@ public class BookingService {
                 totalCents,
                 "CONFIRMED"
         );
-        bookingEventProducer.sendBookingEvent(kafkaEvent);
+        if (bookingEventProducer != null) bookingEventProducer.sendBookingEvent(kafkaEvent);
 
         return bookingMapper.toResponse(booking);
     }
@@ -159,7 +159,7 @@ public class BookingService {
                 booking.getTotalCents(),
                 "CANCELLED"
         );
-        bookingEventProducer.sendBookingEvent(kafkaEvent);
+        if (bookingEventProducer != null) bookingEventProducer.sendBookingEvent(kafkaEvent);
 
         return bookingMapper.toResponse(booking);
     }
