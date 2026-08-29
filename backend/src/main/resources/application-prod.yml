@@ -1,13 +1,13 @@
 # ═══════════════════════════════════════════════════════════════
 # Production Profile — All config via environment variables
-# Uses SPRING_ prefix so env vars override cleanly (Render, Vercel)
 # ═══════════════════════════════════════════════════════════════
 
 spring:
+  # ─── DataSource (PostgreSQL via Render) ────────────────
+  # Render sets DATABASE_URL=postgresql://user:pass@host:port/db
+  # Prepending jdbc: makes it a valid JDBC URL
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: jdbc:${DATABASE_URL}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -16,10 +16,19 @@ spring:
       connection-timeout: 20000
       max-lifetime: 1200000
 
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
   jpa:
     hibernate:
       ddl-auto: none
     show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   kafka:
     listener:
