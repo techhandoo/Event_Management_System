@@ -51,11 +51,22 @@ public class AuthService {
             throw new DuplicateResourceException("Email already registered: " + request.getEmail());
         }
 
+        // Determine role — only ATTENDEE and ORGANIZER allowed via self-registration
+        Role role = Role.ATTENDEE;
+        if (request.getRole() != null) {
+            try {
+                Role requested = Role.valueOf(request.getRole().toUpperCase());
+                if (requested == Role.ATTENDEE || requested == Role.ORGANIZER) {
+                    role = requested;
+                }
+            } catch (IllegalArgumentException ignored) { /* default to ATTENDEE */ }
+        }
+
         User user = User.builder()
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
-                .role(Role.ATTENDEE)
+                .role(role)
                 .isActive(true)
                 .build();
 

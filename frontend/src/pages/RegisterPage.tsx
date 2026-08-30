@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, homeForRole } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Zap, ArrowRight, Users, Ticket } from 'lucide-react';
@@ -23,9 +23,9 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setIsSubmitting(true);
     try {
-      await reg(data.email, data.password, data.fullName);
+      await reg(data.email, data.password, data.fullName, selectedRole);
       toast.success('Account created!');
-      navigate('/events');
+      navigate(homeForRole(selectedRole));
     } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to register'); }
     finally { setIsSubmitting(false); }
   };

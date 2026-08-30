@@ -22,7 +22,7 @@ export default function AdminDashboardPage() {
       const [a, u, h] = await Promise.all([
         api.get('/admin/analytics').catch(() => ({ data: { data: null } })),
         api.get(`/admin/users?page=${page}&size=15`).catch(() => ({ data: { data: { content: [], totalPages: 0 } } })),
-        api.get('/api/health').catch(() => ({ data: { status: 'DOWN' } })),
+        api.get('/health').catch(() => ({ data: { status: 'DOWN' } })),
       ]);
       setAnalytics(a.data.data);
       const d: PagedUsers = u.data.data;
