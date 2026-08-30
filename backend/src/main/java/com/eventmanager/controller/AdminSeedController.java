@@ -92,7 +92,7 @@ public class AdminSeedController {
                         .email(admin.getEmail())
                         .fullName(admin.getFullName())
                         .role(admin.getRole())
-                        .isActive(admin.isActive())
+                        .isActive(admin.getIsActive())
                         .build())
                 .build();
 
