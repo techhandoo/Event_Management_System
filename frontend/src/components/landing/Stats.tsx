@@ -31,7 +31,7 @@ const stats = [
 
 export default function Stats() {
   return (
-    <section id="stats" className="py-24 bg-white">
+    <section id="stats" className="py-24 bg-surface-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat, index) => (
@@ -43,7 +43,7 @@ export default function Stats() {
               transition={{ duration: 0.35, delay: index * 0.06 }}
               className="text-center"
             >
-              <div className="text-3xl sm:text-4xl font-bold text-brand-600 mb-1">
+              <div className="text-3xl sm:text-4xl font-bold text-brand-400 mb-1">
                 <AnimatedCounter end={stat.value} suffix={stat.suffix} />
               </div>
               <p className="text-sm font-semibold text-surface-800">{stat.label}</p>

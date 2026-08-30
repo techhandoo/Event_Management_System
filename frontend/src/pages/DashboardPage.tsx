@@ -100,7 +100,7 @@ export default function DashboardPage() {
               <h3 className="text-sm font-semibold text-surface-800">Bookings Trend</h3>
               <p className="text-xs text-surface-400 mt-0.5">Monthly booking count</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
               Active
             </div>
@@ -117,7 +117,7 @@ export default function DashboardPage() {
               <h3 className="text-sm font-semibold text-surface-800">Spending Trend</h3>
               <p className="text-xs text-surface-400 mt-0.5">Monthly expenditure</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-brand-600 font-semibold bg-brand-50 px-2 py-0.5 rounded-full">
+            <div className="flex items-center gap-1.5 text-xs text-brand-400 font-semibold bg-brand-500/10 px-2 py-0.5 rounded-full border border-brand-500/20">
               <DollarSign size={12} />
               Revenue
             </div>

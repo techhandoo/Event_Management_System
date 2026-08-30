@@ -79,13 +79,13 @@ export default function AdminDashboardPage() {
 
       {/* System Health Banner */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${
-        systemHealth === 'UP' ? 'bg-emerald-50 border-emerald-200' :
-        systemHealth === 'DEGRADED' ? 'bg-amber-50 border-amber-200' :
-        'bg-red-50 border-red-200'
+        systemHealth === 'UP' ? 'bg-emerald-500/10 border-emerald-500/20' :
+        systemHealth === 'DEGRADED' ? 'bg-amber-500/10 border-amber-500/20' :
+        'bg-red-500/10 border-red-500/20'
       }`}>
         <Activity size={18} className={systemHealth === 'UP' ? 'text-emerald-600' : systemHealth === 'DEGRADED' ? 'text-amber-600' : 'text-red-600'} />
         <div>
-          <p className={`text-sm font-semibold ${systemHealth === 'UP' ? 'text-emerald-800' : systemHealth === 'DEGRADED' ? 'text-amber-800' : 'text-red-800'}`}>
+          <p className={`text-sm font-semibold ${        systemHealth === 'UP' ? 'text-emerald-400' : systemHealth === 'DEGRADED' ? 'text-amber-400' : 'text-red-400'}`}>
             System {systemHealth}
           </p>
           <p className="text-xs text-surface-500">Database, Kafka, and Redis connectivity</p>
@@ -118,7 +118,7 @@ export default function AdminDashboardPage() {
               <h3 className="text-sm font-semibold text-surface-800">User Growth</h3>
               <p className="text-xs text-surface-400 mt-0.5">Monthly user registrations</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
               <TrendingUp size={12} /> +18%
             </div>
           </div>
@@ -210,7 +210,7 @@ export default function AdminDashboardPage() {
             </thead>
             <tbody>
               {users.map(u => (
-                <tr key={u.id} className={`hover:bg-surface-25 transition-colors ${!u.isActive ? 'bg-red-50/30' : ''}`}>
+                <tr key={u.id} className={`hover:bg-surface-25 transition-colors ${                  !u.isActive ? 'bg-red-500/5' : ''}`}>
                   <td className="px-6">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
@@ -230,7 +230,7 @@ export default function AdminDashboardPage() {
                     <select
                       value={u.role}
                       onChange={e => handleRole(u.id, e.target.value)}
-                      className="text-xs border border-surface-200 rounded-lg px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-colors"
+                      className="text-xs border border-white/[0.08] rounded-lg px-2.5 py-1.5 bg-white/[0.04] text-surface-600 focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500/50 transition-colors"
                     >
                       <option value="ATTENDEE">Attendee</option>
                       <option value="ORGANIZER">Organizer</option>
@@ -245,7 +245,7 @@ export default function AdminDashboardPage() {
                     <button
                       onClick={() => handleBan(u.id)}
                       className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                        u.isActive ? 'text-red-600 hover:bg-red-50 border border-red-200' : 'text-emerald-600 hover:bg-emerald-50 border border-emerald-200'
+                        u.isActive ? 'text-red-400 hover:bg-red-500/10 border border-red-500/20' : 'text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/20'
                       }`}
                     >
                       {u.isActive ? 'Ban' : 'Unban'}

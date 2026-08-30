@@ -36,11 +36,11 @@ export default function HowItWorks() {
           transition={{ duration: 0.4 }}
           className="text-center mb-16"
         >
-          <span className="text-xs font-semibold text-brand-600 uppercase tracking-wider">How it works</span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-surface-800 mt-3 mb-4 tracking-tight">
+          <span className="text-xs font-semibold text-brand-400 uppercase tracking-wider">How it works</span>
+          <h2 className="text-3xl sm:text-4xl font-bold text-surface-900 mt-3 mb-4 tracking-tight">
             Get started in three simple steps
           </h2>
-          <p className="text-surface-500 text-lg max-w-2xl mx-auto">
+          <p className="text-surface-400 text-lg max-w-2xl mx-auto">
             No complicated setup. No training required. Just sign up and go.
           </p>
         </motion.div>
@@ -56,20 +56,20 @@ export default function HowItWorks() {
               className="relative text-center"
             >
               {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-10 left-[60%] w-[80%] border-t-2 border-dashed border-surface-200" />
+                <div className="hidden md:block absolute top-10 left-[60%] w-[80%] border-t-2 border-dashed border-white/[0.08]" />
               )}
 
               <div className="relative inline-flex mb-6">
                 <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-card-lg`}>
                   <step.icon className="w-8 h-8 text-white" />
                 </div>
-                <span className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full border-2 border-surface-200 flex items-center justify-center text-xs font-bold text-surface-800">
+                <span className="absolute -top-2 -right-2 w-7 h-7 bg-surface-50 rounded-full border-2 border-white/[0.1] flex items-center justify-center text-xs font-bold text-surface-700">
                   {step.step}
                 </span>
               </div>
 
               <h3 className="text-lg font-semibold text-surface-800 mb-2">{step.title}</h3>
-              <p className="text-sm text-surface-500 leading-relaxed max-w-sm mx-auto">{step.description}</p>
+              <p className="text-sm text-surface-400 leading-relaxed max-w-sm mx-auto">{step.description}</p>
             </motion.div>
           ))}
         </div>

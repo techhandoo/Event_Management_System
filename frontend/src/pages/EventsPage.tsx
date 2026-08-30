@@ -51,22 +51,22 @@ export default function EventsPage() {
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="min-h-screen bg-surface-50">
+    <div className="min-h-screen bg-surface-0">
       {/* Public header */}
-      <header className="h-16 bg-white/80 backdrop-blur-md border-b border-surface-150 sticky top-0 z-30">
+      <header className="h-16 glass-nav">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
           <Link to="/events" className="flex items-center gap-2.5 group">
             <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center shadow-brand group-hover:shadow-lg group-hover:shadow-brand-600/20 transition-shadow">
               <Zap className="text-white" size={16} />
             </div>
-            <span className="text-lg font-bold text-surface-800 tracking-tight">Eventry</span>
+            <span className="text-lg font-bold text-surface-900 tracking-tight">Eventry</span>
           </Link>
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
               <>
                 <NotificationCenter />
                 <Link to="/dashboard" className="text-sm text-surface-500 hover:text-surface-800 font-medium hidden sm:block transition-colors">Dashboard</Link>
-                <div className="w-8 h-8 bg-brand-100 text-brand-700 rounded-full flex items-center justify-center text-sm font-bold hover:bg-brand-200 transition-colors cursor-pointer">
+                <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-violet-500 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-glow transition-colors cursor-pointer">
                   {user?.fullName?.charAt(0)?.toUpperCase()}
                 </div>
               </>
@@ -82,8 +82,8 @@ export default function EventsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-3xl font-bold text-surface-800 tracking-tight">Discover events</h1>
-          <p className="text-surface-500 mt-1">Find your next experience</p>
+          <h1 className="text-3xl font-bold text-surface-900 tracking-tight">Discover events</h1>
+          <p className="text-surface-400 mt-1">Find your next experience</p>
         </motion.div>
 
         {/* Search */}
@@ -100,7 +100,7 @@ export default function EventsPage() {
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`btn h-11 ${showFilters ? 'bg-brand-50 border-brand-200 text-brand-700' : 'btn-secondary'}`}
+            className={`btn h-11 ${showFilters ? 'bg-brand-500/15 border-brand-500/30 text-brand-400' : 'btn-secondary'}`}
           >
             <SlidersHorizontal size={16} /> Filters
           </button>
@@ -113,7 +113,7 @@ export default function EventsPage() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-white rounded-xl border border-surface-150 overflow-hidden"
+              className="flex flex-col sm:flex-row gap-3 mb-6 p-4 card overflow-hidden"
             >
               <input type="text" value={cityFilter} onChange={e => setCityFilter(e.target.value)} className="input h-10" placeholder="City" />
               <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="input select h-10">
@@ -150,7 +150,7 @@ export default function EventsPage() {
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <div className="absolute top-3 right-3">
-                        <span className="bg-white/95 backdrop-blur-sm text-surface-800 text-xs font-bold px-2.5 py-1 rounded-lg shadow-xs group-hover:shadow-md transition-shadow">
+                        <span className="bg-surface-0/80 backdrop-blur-sm text-surface-900 text-xs font-bold px-2.5 py-1 rounded-lg shadow-xs group-hover:shadow-md transition-shadow border border-white/[0.06]">
                           {fmt(event.priceCents)}
                         </span>
                       </div>

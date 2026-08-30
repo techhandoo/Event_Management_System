@@ -11,12 +11,12 @@ export default function PageHeader({ title, description, action }: PageHeaderPro
     <motion.div
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className="flex items-start justify-between gap-4"
     >
       <div>
-        <h1 className="text-xl font-bold text-surface-800 tracking-tight">{title}</h1>
-        {description && <p className="text-sm text-surface-500 mt-0.5">{description}</p>}
+        <h1 className="text-2xl font-bold text-surface-900 tracking-tight">{title}</h1>
+        {description && <p className="text-sm text-surface-400 mt-1">{description}</p>}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}
     </motion.div>
