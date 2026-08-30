@@ -14,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 
 /**
@@ -26,12 +29,21 @@ import java.util.Map;
 @Tag(name = "Admin Seed", description = "One-time admin creation (disable after use)")
 public class AdminSeedController {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminSeedController.class);
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @Value("${ADMIN_SEED_KEY:eventry-admin-seed-2024}")
+    @Value("${ADMIN_SEED_KEY:}")
     private String seedKey;
+
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        if (seedKey == null || seedKey.isBlank()) {
+            log.warn("ADMIN_SEED_KEY not set — admin seed endpoint is disabled");
+        }
+    }
 
     public AdminSeedController(UserRepository userRepository,
                                 PasswordEncoder passwordEncoder,
@@ -44,6 +56,12 @@ public class AdminSeedController {
     @PostMapping("/seed-admin")
     @Operation(summary = "Create the first admin user (one-time only)")
     public ResponseEntity<?> seedAdmin(@RequestBody Map<String, String> body) {
+        // Check if seed key is configured
+        if (seedKey == null || seedKey.isBlank()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("Admin seed endpoint is disabled. Set ADMIN_SEED_KEY env var to enable."));
+        }
+
         // Check if admin already exists
         if (userRepository.existsByRole(Role.ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
