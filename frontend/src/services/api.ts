@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: 'https://eventry-api.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -31,7 +31,7 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const response = await axios.post('/api/auth/refresh', null, {
+          const response = await axios.post('https://eventry-api.onrender.com/api/auth/refresh', null, {
             headers: { 'Refresh-Token': refreshToken },
           });
           const { accessToken, refreshToken: newRefreshToken } = response.data.data;

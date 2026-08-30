@@ -1,11 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://eventry-api.onrender.com/api/:path*"
-    },
-    {
-      "source": "/((?!api/|assets/).*)",
+      "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
   ],
