@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth, homeForRole } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
 import DashboardLayout from './components/DashboardLayout';
 import { PageLoader } from './components/ui/LoadingState';
@@ -30,9 +30,9 @@ function ProtectedRoute({ children, roles }: { children: ReactNode; roles?: stri
 }
 
 function PublicRoute({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) return <PageLoader />;
-  if (isAuthenticated) return <Navigate to="/events" />;
+  if (isAuthenticated) return <Navigate to={homeForRole(user?.role)} />;
   return <>{children}</>;
 }
 
