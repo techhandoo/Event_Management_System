@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +15,18 @@ export default function TopBar() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => { logout(); navigate('/login'); };
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
 
   if (!isAuthenticated) return null;
 
@@ -73,14 +85,12 @@ export default function TopBar() {
 
           <AnimatePresence>
             {menuOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                 <motion.div
                   initial={{ opacity: 0, y: -8, scale: 0.96 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.96 }}
                   transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-                  className="absolute right-0 mt-2 w-64 glass-card shadow-dropdown z-50 py-1.5"
+                  className="absolute right-0 mt-2 w-64 glass-card shadow-dropdown py-1.5"
                 >
                   <div className="px-4 py-3 border-b border-white/[0.06]">
                     <p className="text-sm font-semibold text-surface-800">{user?.fullName}</p>
@@ -113,7 +123,6 @@ export default function TopBar() {
                     </button>
                   </div>
                 </motion.div>
-              </>
             )}
           </AnimatePresence>
         </div>
