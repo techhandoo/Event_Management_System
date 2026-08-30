@@ -7,36 +7,42 @@ const features = [
     title: 'Create & Manage Events',
     description: 'Build events with rich details — venue, capacity, pricing, scheduling. Publish or keep drafts private.',
     color: 'bg-brand-50 text-brand-600',
+    hoverColor: 'group-hover:bg-brand-100',
   },
   {
     icon: Ticket,
     title: 'Instant Bookings',
     description: 'Real-time availability tracking, instant confirmations, and capacity management for high-concurrency registration.',
     color: 'bg-emerald-50 text-emerald-600',
+    hoverColor: 'group-hover:bg-emerald-100',
   },
   {
     icon: Bell,
     title: 'Smart Notifications',
     description: 'Event updates, booking confirmations, and reminders delivered in real-time via Kafka-powered messaging.',
     color: 'bg-amber-50 text-amber-600',
+    hoverColor: 'group-hover:bg-amber-100',
   },
   {
     icon: BarChart3,
     title: 'Organizer Analytics',
     description: 'Track bookings, revenue, and attendance. Get insights into your events with comprehensive dashboards.',
     color: 'bg-violet-50 text-violet-600',
+    hoverColor: 'group-hover:bg-violet-100',
   },
   {
     icon: Shield,
     title: 'Role-Based Access',
     description: 'JWT authentication with Admin, Organizer, and Attendee roles. Fine-grained permissions for every action.',
     color: 'bg-red-50 text-red-500',
+    hoverColor: 'group-hover:bg-red-100',
   },
   {
     icon: Zap,
     title: 'Blazing Fast',
     description: 'Redis caching, optimized indexes, and async Kafka processing for sub-second response times.',
     color: 'bg-cyan-50 text-cyan-600',
+    hoverColor: 'group-hover:bg-cyan-100',
   },
 ];
 
@@ -64,16 +70,16 @@ export default function Features() {
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.35, delay: index * 0.06 }}
-              className="p-6 rounded-xl border border-surface-150 bg-white hover:shadow-card-hover hover:border-surface-200 transition-all duration-200"
+              transition={{ duration: 0.4, delay: index * 0.06 }}
+              className="group p-6 rounded-xl border border-surface-150 bg-white hover:shadow-card-hover hover:border-surface-200 transition-all duration-300 cursor-default"
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${feature.color}`}>
-                <feature.icon className="w-5 h-5" />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${feature.color} ${feature.hoverColor} transition-colors duration-200`}>
+                <feature.icon className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
               </div>
-              <h3 className="text-[15px] font-semibold text-surface-800 mb-2">{feature.title}</h3>
+              <h3 className="text-[15px] font-semibold text-surface-800 mb-2 group-hover:text-brand-600 transition-colors">{feature.title}</h3>
               <p className="text-sm text-surface-500 leading-relaxed">{feature.description}</p>
             </motion.div>
           ))}

@@ -3,15 +3,15 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Event, PagedResponse, ApiResponse } from '../types';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Clock, Users, Search, SlidersHorizontal, Zap, X, ChevronRight } from 'lucide-react';
 import NotificationCenter from '../components/NotificationCenter';
 import { Spinner, EmptyState, Pagination } from '../components/ui';
 
 const CATEGORIES = ['Conference', 'Workshop', 'Meetup', 'Concert', 'Sports', 'Exhibition', 'Seminar', 'Networking', 'Festival', 'Charity'];
 
-const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } };
-const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } };
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
+const item = { hidden: { opacity: 0, y: 16, scale: 0.98 }, show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as const } } };
 
 export default function EventsPage() {
   const { user, isAuthenticated } = useAuth();
@@ -55,8 +55,8 @@ export default function EventsPage() {
       {/* Public header */}
       <header className="h-16 bg-white/80 backdrop-blur-md border-b border-surface-150 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
-          <Link to="/events" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center shadow-brand">
+          <Link to="/events" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center shadow-brand group-hover:shadow-lg group-hover:shadow-brand-600/20 transition-shadow">
               <Zap className="text-white" size={16} />
             </div>
             <span className="text-lg font-bold text-surface-800 tracking-tight">Eventry</span>
@@ -65,8 +65,8 @@ export default function EventsPage() {
             {isAuthenticated ? (
               <>
                 <NotificationCenter />
-                <Link to="/dashboard" className="text-sm text-surface-500 hover:text-surface-800 font-medium hidden sm:block">Dashboard</Link>
-                <div className="w-8 h-8 bg-brand-100 text-brand-700 rounded-full flex items-center justify-center text-sm font-bold">
+                <Link to="/dashboard" className="text-sm text-surface-500 hover:text-surface-800 font-medium hidden sm:block transition-colors">Dashboard</Link>
+                <div className="w-8 h-8 bg-brand-100 text-brand-700 rounded-full flex items-center justify-center text-sm font-bold hover:bg-brand-200 transition-colors cursor-pointer">
                   {user?.fullName?.charAt(0)?.toUpperCase()}
                 </div>
               </>
@@ -106,25 +106,28 @@ export default function EventsPage() {
           </button>
         </div>
 
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-white rounded-xl border border-surface-150"
-          >
-            <input type="text" value={cityFilter} onChange={e => setCityFilter(e.target.value)} className="input h-10" placeholder="City" />
-            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="input select h-10">
-              <option value="">All categories</option>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            {(cityFilter || categoryFilter) && (
-              <button onClick={() => { setCityFilter(''); setCategoryFilter(''); }} className="text-sm text-red-500 hover:text-red-600 font-medium px-3 flex items-center gap-1">
-                <X size={14} /> Clear
-              </button>
-            )}
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-white rounded-xl border border-surface-150 overflow-hidden"
+            >
+              <input type="text" value={cityFilter} onChange={e => setCityFilter(e.target.value)} className="input h-10" placeholder="City" />
+              <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="input select h-10">
+                <option value="">All categories</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              {(cityFilter || categoryFilter) && (
+                <button onClick={() => { setCityFilter(''); setCategoryFilter(''); }} className="text-sm text-red-500 hover:text-red-600 font-medium px-3 flex items-center gap-1 transition-colors">
+                  <X size={14} /> Clear
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {loading ? (
           <div className="flex justify-center py-20"><Spinner size="lg" /></div>
@@ -139,24 +142,25 @@ export default function EventsPage() {
                   <Link to={`/events/${event.id}`} className="card-hover overflow-hidden group block h-full">
                     <div className="h-44 bg-gradient-to-br from-brand-500 to-brand-700 relative overflow-hidden">
                       {event.imageUrl ? (
-                        <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-white text-5xl font-bold opacity-10">{event.title[0]}</span>
+                          <span className="text-white text-5xl font-bold opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all duration-500">{event.title[0]}</span>
                         </div>
                       )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <div className="absolute top-3 right-3">
-                        <span className="bg-white/95 backdrop-blur-sm text-surface-800 text-xs font-bold px-2.5 py-1 rounded-lg shadow-xs">
+                        <span className="bg-white/95 backdrop-blur-sm text-surface-800 text-xs font-bold px-2.5 py-1 rounded-lg shadow-xs group-hover:shadow-md transition-shadow">
                           {fmt(event.priceCents)}
                         </span>
                       </div>
                     </div>
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="text-[15px] font-semibold text-surface-800 line-clamp-1 group-hover:text-brand-600 transition-colors">
+                        <h3 className="text-[15px] font-semibold text-surface-800 line-clamp-1 group-hover:text-brand-600 transition-colors duration-200">
                           {event.title}
                         </h3>
-                        <ChevronRight size={16} className="text-surface-300 group-hover:text-brand-500 flex-shrink-0 mt-0.5 transition-colors" />
+                        <ChevronRight size={16} className="text-surface-300 group-hover:text-brand-500 group-hover:translate-x-0.5 flex-shrink-0 mt-0.5 transition-all duration-200" />
                       </div>
                       {event.category && <span className="badge-brand mb-2">{event.category}</span>}
                       <div className="space-y-1.5 text-xs text-surface-500 mt-2">

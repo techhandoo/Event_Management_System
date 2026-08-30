@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { Event, ApiResponse } from '../types';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { MapPin, Users, ArrowLeft, Ticket, Calendar } from 'lucide-react';
+import { MapPin, Users, ArrowLeft, Ticket, Calendar, Share2, Heart } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { PageLoader } from '../components/ui';
 
@@ -17,6 +17,7 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [liked, setLiked] = useState(false);
 
   useEffect(() => {
     api.get<ApiResponse<Event>>(`/events/${id}`)
@@ -42,19 +43,34 @@ export default function EventDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto">
-        <button onClick={() => navigate('/events')} className="btn-ghost text-sm mb-4 -ml-2">
-          <ArrowLeft size={16} /> Back to events
+      <div className="max-w-4xl mx-auto page-enter">
+        <button onClick={() => navigate('/events')} className="btn-ghost text-sm mb-4 -ml-2 group">
+          <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" /> Back to events
         </button>
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card overflow-hidden">
           {/* Hero image */}
-          <div className="h-56 sm:h-72 bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center relative">
+          <div className="h-56 sm:h-72 bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center relative overflow-hidden group">
             {event.imageUrl ? (
-              <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+              <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
             ) : (
-              <span className="text-white text-7xl font-bold opacity-10">{event.title[0]}</span>
+              <span className="text-white text-7xl font-bold opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all duration-700">{event.title[0]}</span>
             )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+            {/* Action buttons */}
+            <div className="absolute top-4 right-4 flex gap-2">
+              <button
+                onClick={() => setLiked(!liked)}
+                className={`w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-200 ${
+                  liked ? 'bg-red-500 text-white' : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                <Heart size={16} fill={liked ? 'currentColor' : 'none'} />
+              </button>
+              <button className="w-9 h-9 rounded-full bg-white/20 text-white backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all duration-200">
+                <Share2 size={16} />
+              </button>
+            </div>
           </div>
 
           <div className="p-6 sm:p-8">
@@ -82,19 +98,21 @@ export default function EventDetailPage() {
                     <span>{capacityPct}% filled</span>
                     <span>{event.bookedCount} / {event.capacity}</span>
                   </div>
-                  <div className="w-full h-2 bg-surface-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
+                  <div className="w-full h-2.5 bg-surface-100 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${capacityPct}%` }}
+                      transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.3 }}
+                      className={`h-full rounded-full ${
                         capacityPct >= 90 ? 'bg-red-500' : capacityPct >= 70 ? 'bg-amber-500' : 'bg-brand-500'
                       }`}
-                      style={{ width: `${capacityPct}%` }}
                     />
                   </div>
                 </div>
               </div>
 
               {/* Booking widget */}
-              <div className="bg-surface-50 rounded-xl p-6 border border-surface-150">
+              <div className="bg-surface-50 rounded-xl p-6 border border-surface-150 hover:shadow-card transition-shadow duration-300">
                 <h3 className="text-sm font-semibold text-surface-800 mb-4">Book tickets</h3>
                 <div className="flex items-center gap-3 mb-4">
                   <label className="text-sm text-surface-600 font-medium">Quantity</label>
@@ -114,9 +132,10 @@ export default function EventDetailPage() {
                 <button
                   onClick={handleBook}
                   disabled={booking || event.availableCapacity === 0}
-                  className="btn-primary w-full h-11"
+                  className="btn-primary w-full h-11 group"
                 >
-                  <Ticket size={16} /> {booking ? 'Booking...' : event.availableCapacity === 0 ? 'Sold out' : 'Book now'}
+                  <Ticket size={16} className="group-hover:rotate-12 transition-transform" />
+                  {booking ? 'Booking...' : event.availableCapacity === 0 ? 'Sold out' : 'Book now'}
                 </button>
               </div>
             </div>
@@ -140,8 +159,8 @@ export default function EventDetailPage() {
 
 function InfoRow({ icon, label, sub }: { icon: React.ReactNode; label: string; sub: string }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="mt-0.5 flex-shrink-0">{icon}</div>
+    <div className="flex items-start gap-3 group">
+      <div className="mt-0.5 flex-shrink-0 group-hover:scale-110 transition-transform">{icon}</div>
       <div>
         <p className="text-sm font-medium text-surface-800">{label}</p>
         <p className="text-xs text-surface-500">{sub}</p>
