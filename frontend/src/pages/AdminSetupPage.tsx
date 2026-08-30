@@ -111,7 +111,7 @@ export default function AdminSetupPage() {
                 />
               </div>
               {errors.seedKey && <p className="form-message">{errors.seedKey.message}</p>}
-              <p className="text-[11px] text-surface-400 mt-1">Default: eventry-admin-seed-2024</p>
+              <p className="text-[11px] text-surface-400 mt-1">Set via ADMIN_SEED_KEY environment variable</p>
             </div>
 
             <div className="form-item">
