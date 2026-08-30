@@ -17,21 +17,32 @@ export default function NotificationCenter() {
   const [unreadCount, setUnreadCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (signal?: AbortSignal) => {
     try {
       const [n, c] = await Promise.all([
-        api.get('/notifications?size=20'),
-        api.get('/notifications/unread-count'),
+        api.get('/notifications?size=20', { signal }),
+        api.get('/notifications/unread-count', { signal }),
       ]);
       setNotifications(n.data.data.content || []);
       setUnreadCount(c.data.data.count ?? c.data.data);
-    } catch {}
+    } catch (err: any) {
+      // Stop polling on auth errors (401/403) — user needs to re-login
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+      }
+    }
   };
 
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    const controller = new AbortController();
+    fetchNotifications(controller.signal);
+    intervalRef.current = setInterval(() => fetchNotifications(controller.signal), 30000);
+    return () => {
+      controller.abort();
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, []);
 
   useEffect(() => {

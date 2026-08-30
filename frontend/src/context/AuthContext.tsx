@@ -2,13 +2,23 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import api from '../services/api';
 import { User, AuthResponse } from '../types';
 
+/** Return the default landing page for a given role. */
+export function homeForRole(role?: string): string {
+  switch (role) {
+    case 'ADMIN': return '/admin';
+    case 'ORGANIZER': return '/organizer';
+    default: return '/dashboard';
+  }
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User | null>;
+  register: (email: string, password: string, fullName: string, role?: string) => Promise<void>;
   logout: () => void;
+  homeForRole: (role?: string) => string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,10 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('refreshToken', data.refreshToken);
     localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);
+    return data.user; // return user so caller can use the role
   };
 
-  const register = async (email: string, password: string, fullName: string) => {
-    const response = await api.post('/auth/register', { email, password, fullName });
+  const register = async (email: string, password: string, fullName: string, role?: string) => {
+    const response = await api.post('/auth/register', { email, password, fullName, role: role || 'ATTENDEE' });
     const data: AuthResponse = response.data.data;
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
@@ -52,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout, homeForRole }}>
       {children}
     </AuthContext.Provider>
   );
