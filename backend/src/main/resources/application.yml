@@ -8,8 +8,8 @@ spring:
   # ─── Datasource (PostgreSQL) ──────────────────────────
   datasource:
     url: jdbc:postgresql://localhost:5432/eventry
-    username: postgres
-    password: postgres
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -81,7 +81,7 @@ spring:
 # ─── Application Properties ─────────────────────────────
 app:
   jwt:
-    secret: ${JWT_SECRET:myDefaultSecretKeyForDevelopmentOnlyDoNotUseInProduction2024!}
+    secret: ${JWT_SECRET:}
     access-token-expiration-ms: 900000      # 15 minutes
     refresh-token-expiration-ms: 604800000  # 7 days
     token-prefix: "Bearer "

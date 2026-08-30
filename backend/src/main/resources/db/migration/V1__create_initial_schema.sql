@@ -85,18 +85,5 @@ CREATE TABLE notifications (
 
 CREATE INDEX idx_notifications_user_read ON notifications(user_id, is_read);
 
--- ============================================================
--- Seed Data for Development
--- ============================================================
-
--- Admin user (password: admin123456)
-INSERT INTO users (email, password_hash, full_name, role)
-VALUES ('admin@eventry.app', '$2a$12$LJ3m4ys3Gz5GqVJHN0.YzOQPm4OxKBvHFbHSbMx8aVLJ5O5q.LZ.C', 'Admin User', 'ADMIN');
-
--- Organizer user (password: organizer123456)
-INSERT INTO users (email, password_hash, full_name, role)
-VALUES ('organizer@eventry.app', '$2a$12$LJ3m4ys3Gz5GqVJHN0.YzOQPm4OxKBvHFbHSbMx8aVLJ5O5q.LZ.C', 'John Organizer', 'ORGANIZER');
-
--- Attendee user (password: attendee123456)
-INSERT INTO users (email, password_hash, full_name, role)
-VALUES ('attendee@eventry.app', '$2a$12$LJ3m4ys3Gz5GqVJHN0.YzOQPm4OxKBvHFbHSbMx8aVLJ5O5q.LZ.C', 'Jane Attendee', 'ATTENDEE');
+-- Seed data is handled by DataInitializer.java at application startup
+-- (uses BCryptPasswordEncoder for correct password hashing)

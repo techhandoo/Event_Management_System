@@ -27,6 +27,15 @@ public class JwtTokenProvider {
     @Value("${app.jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpirationMs;
 
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException(
+                "JWT_SECRET environment variable is required. " +
+                "Generate one with: openssl rand -base64 64");
+        }
+    }
+
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
