@@ -19,9 +19,9 @@ interface EnterpriseBarChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-surface-200 rounded-xl px-3 py-2 shadow-lg">
+      <div className="glass-card px-3 py-2 shadow-dropdown">
         <p className="text-xs font-semibold text-surface-800">{label}</p>
-        <p className="text-sm font-bold text-brand-600 tabular-nums">{payload[0].value.toLocaleString()}</p>
+        <p className="text-sm font-bold text-brand-400 tabular-nums">{payload[0].value.toLocaleString()}</p>
       </div>
     );
   }
@@ -29,27 +29,27 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function EnterpriseBarChart({
-  data, height = 280, color = '#0070F3', showGrid = true, barRadius = [6, 6, 0, 0], xKey = 'name', yKey = 'value'
+  data, height = 280, color = '#6366f1', showGrid = true, barRadius = [6, 6, 0, 0], xKey = 'name', yKey = 'value'
 }: EnterpriseBarChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: -12 }}>
         {showGrid && (
-          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
         )}
         <XAxis
           dataKey={xKey}
-          tick={{ fontSize: 12, fill: '#94a3b8' }}
+          tick={{ fontSize: 12, fill: '#64748b' }}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
-          tick={{ fontSize: 12, fill: '#94a3b8' }}
+          tick={{ fontSize: 12, fill: '#64748b' }}
           tickLine={false}
           axisLine={false}
           width={40}
         />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,112,243,0.04)' }} />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,0.06)' }} />
         <Bar dataKey={yKey} radius={barRadius} animationDuration={800}>
           {data.map((entry, index) => (
             <Cell key={index} fill={entry.fill || color} />

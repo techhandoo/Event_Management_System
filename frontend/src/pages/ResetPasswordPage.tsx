@@ -74,7 +74,7 @@ export default function ResetPasswordPage() {
   // Loading state — validating token
   if (validating) {
     return (
-      <div className="min-h-screen bg-surface-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface-0 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-brand-600 animate-spin mx-auto mb-3" />
           <p className="text-sm text-surface-500">Validating reset link...</p>
@@ -86,17 +86,17 @@ export default function ResetPasswordPage() {
   // Invalid token
   if (!token || !tokenValid) {
     return (
-      <div className="min-h-screen bg-surface-50 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-surface-0 flex items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md text-center"
         >
-          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <XCircle className="w-8 h-8 text-red-500" />
+          <div className="w-16 h-16 bg-red-500/15 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+            <XCircle className="w-8 h-8 text-red-400" />
           </div>
-          <h2 className="text-2xl font-bold text-surface-900 mb-2">Invalid or expired link</h2>
-          <p className="text-surface-500 text-sm mb-8">
+          <h1 className="text-2xl font-bold text-surface-900 mb-2">Invalid or expired link</h1>
+          <p className="text-surface-400 text-sm mb-8">
             This password reset link is invalid or has expired. Please request a new one.
           </p>
           <Link to="/forgot-password" className="btn btn-primary justify-center">
@@ -110,17 +110,17 @@ export default function ResetPasswordPage() {
   // Success
   if (success) {
     return (
-      <div className="min-h-screen bg-surface-50 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-surface-0 flex items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="w-full max-w-md text-center"
         >
-          <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+          <div className="w-16 h-16 bg-emerald-500/15 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
+            <CheckCircle2 className="w-8 h-8 text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-bold text-surface-900 mb-2">Password updated</h2>
-          <p className="text-surface-500 text-sm mb-8">
+          <h1 className="text-2xl font-bold text-surface-900 mb-2">Password updated</h1>
+          <p className="text-surface-400 text-sm mb-8">
             Your password has been successfully reset. You can now sign in with your new password.
           </p>
           <Link to="/login" className="btn btn-primary justify-center w-full">
@@ -133,12 +133,12 @@ export default function ResetPasswordPage() {
 
   // Reset form
   return (
-    <div className="min-h-screen bg-surface-50 flex">
+    <div className="min-h-screen bg-surface-0 flex">
       {/* Left: Brand panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white/20 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="flex items-center gap-3 mb-8">
@@ -186,8 +186,8 @@ export default function ResetPasswordPage() {
             <span className="text-xl font-bold text-surface-900 tracking-tight">Eventry</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-surface-900 mb-2">Create new password</h2>
-          <p className="text-surface-500 text-sm mb-8">
+          <h1 className="text-2xl font-bold text-surface-900 mb-2">Create new password</h1>
+          <p className="text-surface-400 text-sm mb-8">
             Enter your new password below. Make sure it's strong and unique.
           </p>
 
@@ -196,7 +196,7 @@ export default function ResetPasswordPage() {
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 mb-4"
+                className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400 mb-4"
               >
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {error}

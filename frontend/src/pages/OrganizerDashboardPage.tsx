@@ -92,7 +92,7 @@ export default function OrganizerDashboardPage() {
               <h3 className="text-sm font-semibold text-surface-800">Revenue Overview</h3>
               <p className="text-xs text-surface-400 mt-0.5">Monthly revenue in cents</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
               <TrendingUp size={12} /> +22%
             </div>
           </div>
@@ -204,14 +204,13 @@ export default function OrganizerDashboardPage() {
                   <td className="px-6 text-right">
                     <div className="flex items-center justify-end gap-1">
                       {ev.status === 'DRAFT' && (
-                        <button onClick={() => handlePublish(ev.id)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-md transition-colors" title="Publish">
+                        <button onClick={() => handlePublish(ev.id)} className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-md transition-colors" title="Publish">
                           <Send size={14} />
                         </button>
                       )}
                       <Link to={`/events/${ev.id}/edit`} className="p-1.5 text-surface-400 hover:text-surface-600 hover:bg-surface-50 rounded-md transition-colors" title="Edit">
                         <Edit size={14} />
-                      </Link>
-                      <button onClick={() => handleDelete(ev.id)} className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Cancel">
+                      </Link>                        <button onClick={() => handleDelete(ev.id)} className="p-1.5 text-red-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors" title="Cancel">
                         <Trash2 size={14} />
                       </button>
                     </div>

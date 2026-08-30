@@ -5,6 +5,7 @@ import { useAuth, homeForRole } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Zap, ArrowRight, Users, Ticket } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 interface RegisterForm { fullName: string; email: string; password: string; }
 
@@ -31,24 +32,24 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-50 flex">
+    <div className="min-h-screen bg-surface-0 flex">
       {/* Brand panel */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="hidden lg:flex flex-1 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 items-center justify-center p-12 relative overflow-hidden order-first"
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="hidden lg:flex flex-1 bg-gradient-to-br from-brand-950 via-violet-950 to-surface-0 items-center justify-center p-12 relative overflow-hidden order-first"
       >
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-80 h-80 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-20 w-60 h-60 bg-white rounded-full blur-3xl" />
+        <div className="absolute inset-0">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px]" />
+          <div className="absolute bottom-20 left-20 w-72 h-72 bg-violet-500/10 rounded-full blur-[80px]" />
         </div>
         <div className="relative z-10 text-center max-w-md">
-          <div className="w-16 h-16 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-white/[0.08] backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-8 border border-white/[0.1] shadow-glow">
             <Zap className="text-white" size={28} />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">Join Eventry</h2>
-          <p className="text-brand-200 text-lg leading-relaxed">
+          <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">Join Eventry</h2>
+          <p className="text-surface-300 text-lg leading-relaxed">
             Start creating and booking events in minutes. No credit card required.
           </p>
         </div>
@@ -58,19 +59,19 @@ export default function RegisterPage() {
       <motion.div
         initial={{ opacity: 0, x: 12 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
         className="flex-1 flex items-center justify-center p-6 sm:p-8"
       >
         <div className="w-full max-w-md">
           <div className="mb-8">
-            <Link to="/" className="inline-flex items-center gap-2.5 mb-8 lg:hidden">
-              <div className="w-9 h-9 bg-brand-600 rounded-lg flex items-center justify-center shadow-brand">
-                <Zap className="text-white" size={18} />
+            <Link to="/" className="inline-flex items-center gap-3 mb-10 lg:hidden">
+              <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-violet-500 rounded-xl flex items-center justify-center shadow-glow">
+                <Zap className="text-white" size={20} />
               </div>
-              <span className="text-xl font-bold text-surface-800 tracking-tight">Eventry</span>
+              <span className="text-xl font-bold text-surface-900 tracking-tight">Eventry</span>
             </Link>
-            <h1 className="text-2xl font-bold text-surface-800">Create your account</h1>
-            <p className="text-surface-500 mt-1 text-sm">Fill in your details to get started</p>
+            <h1 className="text-3xl font-bold text-surface-900 tracking-tight">Create your account</h1>
+            <p className="text-surface-400 mt-2 text-sm">Fill in your details to get started</p>
           </div>
 
           {/* Role selector */}
@@ -80,28 +81,29 @@ export default function RegisterPage() {
                 key={r.value}
                 type="button"
                 onClick={() => setSelectedRole(r.value)}
-                className={`p-3 rounded-xl border-2 text-left transition-all ${
+                className={cn(
+                  "p-4 rounded-xl border text-left transition-all duration-200",
                   selectedRole === r.value
-                    ? 'border-brand-600 bg-brand-50 shadow-brand'
-                    : 'border-surface-200 bg-white hover:border-surface-300'
-                }`}
+                    ? "border-brand-500/50 bg-brand-500/[0.08] shadow-glow"
+                    : "border-white/[0.06] bg-white/[0.03] hover:border-white/[0.1] hover:bg-white/[0.05]"
+                )}
               >
-                <r.icon size={18} className={selectedRole === r.value ? 'text-brand-600' : 'text-surface-400'} />
-                <p className={`text-sm font-semibold mt-1.5 ${selectedRole === r.value ? 'text-brand-700' : 'text-surface-700'}`}>{r.label}</p>
+                <r.icon size={18} className={selectedRole === r.value ? "text-brand-400" : "text-surface-400"} />
+                <p className={cn("text-sm font-semibold mt-2", selectedRole === r.value ? "text-brand-300" : "text-surface-600")}>{r.label}</p>
                 <p className="text-[11px] text-surface-400 mt-0.5">{r.desc}</p>
               </button>
             ))}
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="form-item">
               <label className="label">Full name</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
                 <input
                   type="text"
                   {...register('fullName', { required: 'Full name is required' })}
-                  className={`input pl-10 ${errors.fullName ? 'input-error' : ''}`}
+                  className={`input pl-11 ${errors.fullName ? 'input-error' : ''}`}
                   placeholder="John Doe"
                 />
               </div>
@@ -111,11 +113,11 @@ export default function RegisterPage() {
             <div className="form-item">
               <label className="label">Email address</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
                 <input
                   type="email"
                   {...register('email', { required: 'Email is required', pattern: { value: /^\S+@\S+$/i, message: 'Invalid email' } })}
-                  className={`input pl-10 ${errors.email ? 'input-error' : ''}`}
+                  className={`input pl-11 ${errors.email ? 'input-error' : ''}`}
                   placeholder="you@company.com"
                 />
               </div>
@@ -125,26 +127,26 @@ export default function RegisterPage() {
             <div className="form-item">
               <label className="label">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
                 <input
                   type="password"
-                  {...register('password', { required: 'Password is required', minLength: { value: 6, message: 'At least 6 characters' } })}
-                  className={`input pl-10 ${errors.password ? 'input-error' : ''}`}
+                  {...register('password', { required: 'Password is required', minLength: { value: 8, message: 'At least 8 characters' } })}
+                  className={`input pl-11 ${errors.password ? 'input-error' : ''}`}
                   placeholder="Create a strong password"
                 />
               </div>
               {errors.password && <p className="form-message">{errors.password.message}</p>}
             </div>
 
-            <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-11">
+            <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-12 text-base">
               {isSubmitting ? 'Creating account...' : 'Create account'}
-              {!isSubmitting && <ArrowRight size={16} />}
+              {!isSubmitting && <ArrowRight size={18} />}
             </button>
           </form>
 
-          <p className="text-center mt-6 text-sm text-surface-500">
+          <p className="text-center mt-8 text-sm text-surface-400">
             Already have an account?{' '}
-            <Link to="/login" className="text-brand-600 hover:text-brand-700 font-semibold">Sign in</Link>
+            <Link to="/login" className="text-brand-400 hover:text-brand-300 font-semibold transition-colors">Sign in</Link>
           </p>
         </div>
       </motion.div>

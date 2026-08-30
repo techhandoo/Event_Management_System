@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, homeForRole } from '../context/AuthContext';
 import { useSidebar } from '../context/SidebarContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Ticket, Shield, PlusCircle,
   ChevronLeft, ChevronRight, Zap, Search, BarChart3, Users, LogOut
 } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 interface NavItem {
   label: string;
@@ -41,15 +42,15 @@ export default function Sidebar() {
 
   return (
     <motion.aside
-      animate={{ width: collapsed ? 68 : 248 }}
+      animate={{ width: collapsed ? 72 : 260 }}
       transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed left-0 top-0 h-screen bg-white border-r border-surface-150 shadow-sidebar z-40 flex flex-col"
+      className="fixed left-0 top-0 h-screen glass-sidebar z-40 flex flex-col"
     >
       {/* Brand */}
-      <div className="h-16 flex items-center border-b border-surface-100 px-4">
-        <Link to="/events" className="flex items-center gap-2.5 overflow-hidden">
-          <div className="flex-shrink-0 w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center shadow-brand">
-            <Zap className="text-white" size={16} />
+      <div className="h-16 flex items-center border-b border-white/[0.06] px-4">
+        <Link to={homeForRole(user?.role)} className="flex items-center gap-3 overflow-hidden">
+          <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-brand-500 to-violet-500 rounded-xl flex items-center justify-center shadow-glow">
+            <Zap className="text-white" size={18} />
           </div>
           <AnimatePresence>
             {!collapsed && (
@@ -58,7 +59,7 @@ export default function Sidebar() {
                 animate={{ opacity: 1, width: 'auto' }}
                 exit={{ opacity: 0, width: 0 }}
                 transition={{ duration: 0.15 }}
-                className="text-lg font-bold text-surface-800 whitespace-nowrap overflow-hidden tracking-tight"
+                className="text-lg font-bold text-surface-900 whitespace-nowrap overflow-hidden tracking-tight"
               >
                 Eventry
               </motion.span>
@@ -68,10 +69,10 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2.5">
+      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {filteredItems.map((item, i) => {
           if (item.divider && !item.label) {
-            return <div key={i} className="my-2 divider mx-2" />;
+            return <div key={i} className="my-3 divider mx-1" />;
           }
           const isActive = location.pathname === item.href ||
             (item.href !== '/events' && location.pathname.startsWith(item.href));
@@ -79,23 +80,25 @@ export default function Sidebar() {
             <Link
               key={item.href + i}
               to={item.href}
-              className={`relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 mb-0.5 group ${
+              className={cn(
+                "relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group",
                 isActive
-                  ? 'bg-brand-50 text-brand-700'
-                  : 'text-surface-500 hover:bg-surface-50 hover:text-surface-800'
-              }`}
+                  ? "text-white"
+                  : "text-surface-400 hover:bg-white/[0.04] hover:text-surface-600"
+              )}
               title={collapsed ? item.label : undefined}
             >
               {isActive && (
                 <motion.div
                   layoutId="sidebar-active"
-                  className="absolute inset-0 bg-brand-50 rounded-lg"
+                  className="absolute inset-0 bg-gradient-to-r from-brand-500/20 to-violet-500/20 rounded-xl border border-brand-500/20"
                   transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                 />
               )}
-              <span className={`relative z-10 flex-shrink-0 transition-colors ${
-                isActive ? 'text-brand-600' : 'text-surface-400 group-hover:text-surface-600'
-              }`}>
+              <span className={cn(
+                "relative z-10 flex-shrink-0 transition-colors",
+                isActive ? "text-brand-400" : "text-surface-400 group-hover:text-surface-500"
+              )}>
                 {item.icon}
               </span>
               <AnimatePresence>
@@ -116,11 +119,11 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* User section + collapse */}
-      <div className="px-2.5 py-3 border-t border-surface-100 space-y-1">
-        {/* User pill */}
-        <div className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg ${collapsed ? 'justify-center' : ''}`}>
-          <div className="w-8 h-8 bg-brand-100 text-brand-700 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+      {/* User pill + collapse */}
+      <div className="px-3 py-4 border-t border-white/[0.06] space-y-2">
+        {/* User */}
+        <div className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl", collapsed ? "justify-center" : "")}>
+          <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-violet-500 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-glow">
             {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <AnimatePresence>
@@ -133,17 +136,17 @@ export default function Sidebar() {
                 className="min-w-0 flex-1 overflow-hidden"
               >
                 <p className="text-sm font-medium text-surface-800 truncate">{user?.fullName}</p>
-                <p className="text-[11px] text-surface-400 truncate">{user?.role}</p>
+                <p className="text-[10px] text-surface-400 truncate uppercase tracking-wider font-semibold">{user?.role}</p>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Collapse + Logout */}
-        <div className="flex items-center gap-1">
+        {/* Actions */}
+        <div className="flex items-center gap-1.5">
           <button
             onClick={toggle}
-            className="flex items-center justify-center gap-2 px-3 py-2 text-xs text-surface-400 hover:text-surface-700 hover:bg-surface-50 rounded-lg transition-colors flex-1"
+            className="flex items-center justify-center gap-2 px-3 py-2 text-xs text-surface-400 hover:text-surface-600 hover:bg-white/[0.04] rounded-xl transition-colors flex-1"
           >
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
             <AnimatePresence>
@@ -167,7 +170,7 @@ export default function Sidebar() {
                 animate={{ opacity: 1, width: 'auto' }}
                 exit={{ opacity: 0, width: 0 }}
                 onClick={() => { logout(); }}
-                className="p-2 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                className="p-2 text-surface-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors flex-shrink-0"
                 title="Sign out"
               >
                 <LogOut size={14} />

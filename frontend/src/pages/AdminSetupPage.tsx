@@ -43,13 +43,13 @@ export default function AdminSetupPage() {
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full"
+          className="glass-card p-8 text-center max-w-md w-full"
         >
-          <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Shield className="text-emerald-600" size={32} />
+          <div className="w-16 h-16 bg-emerald-500/15 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+            <Shield className="text-emerald-400" size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-surface-800 mb-2">Admin Created!</h2>
-          <p className="text-surface-500">Redirecting to admin panel...</p>
+          <h2 className="text-2xl font-bold text-surface-900 mb-2">Admin Created!</h2>
+          <p className="text-surface-400">Redirecting to admin panel...</p>
         </motion.div>
       </div>
     );
@@ -62,18 +62,17 @@ export default function AdminSetupPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="hidden lg:flex flex-1 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 items-center justify-center p-12 relative overflow-hidden order-first"
+        className="hidden lg:flex flex-1 bg-gradient-to-br from-violet-600 via-brand-700 to-brand-800 items-center justify-center p-12 relative overflow-hidden order-first"
       >
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-80 h-80 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-20 w-60 h-60 bg-white rounded-full blur-3xl" />
+          <div className="absolute top-20 right-20 w-80 h-80 bg-white/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 left-20 w-60 h-60 bg-white/20 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 text-center max-w-md">
           <div className="w-16 h-16 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Shield className="text-white" size={28} />
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">Admin Setup</h2>
-          <p className="text-purple-200 text-lg leading-relaxed">
+          </div>            <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">Admin Setup</h1>
+          <p className="text-violet-200 text-lg leading-relaxed">
             Create the first administrator account. This is a one-time operation that can only be performed once.
           </p>
         </div>
@@ -92,10 +91,10 @@ export default function AdminSetupPage() {
               <div className="w-9 h-9 bg-purple-600 rounded-lg flex items-center justify-center">
                 <Zap className="text-white" size={18} />
               </div>
-              <span className="text-xl font-bold text-surface-800 tracking-tight">Eventry</span>
+              <span className="text-xl font-bold text-surface-900 tracking-tight">Eventry</span>
             </Link>
-            <h1 className="text-2xl font-bold text-surface-800">Create Admin Account</h1>
-            <p className="text-surface-500 mt-1 text-sm">One-time setup — this page disables after use</p>
+            <h1 className="text-2xl font-bold text-surface-900">Create Admin Account</h1>
+            <p className="text-surface-400 mt-1 text-sm">One-time setup — this page disables after use</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -156,14 +155,14 @@ export default function AdminSetupPage() {
               {errors.password && <p className="form-message">{errors.password.message}</p>}
             </div>
 
-            <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-11 bg-purple-600 hover:bg-purple-700">
+            <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-11">
               {isSubmitting ? 'Creating admin...' : 'Create Admin Account'}
               {!isSubmitting && <ArrowRight size={16} />}
             </button>
           </form>
 
           <p className="text-center mt-6 text-sm text-surface-500">
-            <Link to="/login" className="text-purple-600 hover:text-purple-700 font-semibold">← Back to Login</Link>
+            <Link to="/login" className="text-brand-400 hover:text-brand-300 font-semibold">← Back to Login</Link>
           </p>
         </div>
       </motion.div>

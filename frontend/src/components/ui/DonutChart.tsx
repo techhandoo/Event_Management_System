@@ -15,14 +15,14 @@ interface DonutChartProps {
   centerValue?: string;
 }
 
-const COLORS = ['#0070F3', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+const COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#f87171', '#34d399', '#fbbf24'];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white border border-surface-200 rounded-xl px-3 py-2 shadow-lg">
+      <div className="glass-card px-3 py-2 shadow-dropdown">
         <p className="text-xs font-semibold text-surface-800">{payload[0].name}</p>
-        <p className="text-sm font-bold text-brand-600 tabular-nums">{payload[0].value.toLocaleString()}</p>
+        <p className="text-sm font-bold text-brand-400 tabular-nums">{payload[0].value.toLocaleString()}</p>
       </div>
     );
   }
@@ -57,7 +57,7 @@ export default function DonutChart({
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
             <p className="text-xl font-bold text-surface-900 tabular-nums">{centerValue}</p>
-            <p className="text-xs text-surface-500">{centerLabel}</p>
+            <p className="text-xs text-surface-400">{centerLabel}</p>
           </div>
         </div>
       )}

@@ -26,12 +26,12 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-50 flex">
+    <div className="min-h-screen bg-surface-0 flex">
       {/* Brand panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl" />
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white/20 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="flex items-center gap-3 mb-8">
@@ -61,11 +61,11 @@ export default function ForgotPasswordPage() {
             <div className="w-9 h-9 bg-brand-600 rounded-lg flex items-center justify-center shadow-brand">
               <KeyRound className="w-4 h-4 text-white" />
             </div>
-            <span className="text-xl font-bold text-surface-800 tracking-tight">Eventry</span>
+            <span className="text-xl font-bold text-surface-900 tracking-tight">Eventry</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-surface-800 mb-2">Reset your password</h2>
-          <p className="text-surface-500 text-sm mb-8">
+          <h1 className="text-2xl font-bold text-surface-900 mb-2">Reset your password</h1>
+          <p className="text-surface-400 text-sm mb-8">
             Enter the email address associated with your account and we'll send a reset link.
           </p>
 
@@ -75,12 +75,12 @@ export default function ForgotPasswordPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="card p-6 text-center"
             >
-              <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 bg-emerald-500/15 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
                 <CheckCircle2 className="w-7 h-7 text-emerald-500" />
               </div>
-              <h3 className="text-lg font-semibold text-surface-800 mb-2">Check your email</h3>
-              <p className="text-sm text-surface-500 mb-6">
-                We've sent a password reset link to <strong className="text-surface-700">{email}</strong>.
+              <h3 className="text-lg font-semibold text-surface-900 mb-2">Check your email</h3>
+              <p className="text-sm text-surface-400 mb-6">
+                We've sent a password reset link to <strong className="text-surface-800">{email}</strong>.
                 The link expires in 1 hour.
               </p>
               <div className="space-y-2">
@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="flex items-center gap-2 p-3 bg-red-50 border border-red-200/60 rounded-lg text-sm text-red-600 mb-4"
+                  className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400 mb-4"
                 >
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   {error}

@@ -7,14 +7,20 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+const pageVariants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+};
+
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { collapsed } = useSidebar();
 
   return (
-    <div className="min-h-screen bg-surface-50">
+    <div className="min-h-screen bg-surface-0">
       <Sidebar />
       <motion.div
-        animate={{ marginLeft: collapsed ? 68 : 248 }}
+        animate={{ marginLeft: collapsed ? 72 : 260 }}
         transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
         className="flex flex-col min-h-screen"
       >
@@ -22,9 +28,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <main className="flex-1 p-6 lg:p-8">
           <motion.div
             key={typeof window !== 'undefined' ? window.location.pathname : ''}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
           >
             {children}
           </motion.div>
