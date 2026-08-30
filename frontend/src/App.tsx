@@ -18,13 +18,14 @@ import OrganizerDashboardPage from './pages/OrganizerDashboardPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import CreateEventPage from './pages/CreateEventPage';
 import EditEventPage from './pages/EditEventPage';
+import ErrorPage from './pages/ErrorPage';
 import { ReactNode } from 'react';
 
 function ProtectedRoute({ children, roles }: { children: ReactNode; roles?: string[] }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   if (isLoading) return <PageLoader />;
   if (!isAuthenticated) return <Navigate to="/login" />;
-  if (roles && user && !roles.includes(user.role)) return <Navigate to="/events" />;
+  if (roles && user && !roles.includes(user.role)) return <ErrorPage code={403} />;
   return <DashboardLayout>{children}</DashboardLayout>;
 }
 
@@ -55,6 +56,9 @@ function App() {
             <Route path="/organizer" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><OrganizerDashboardPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']}><AdminDashboardPage /></ProtectedRoute>} />
             <Route path="/" element={<LandingPage />} />
+            <Route path="/403" element={<ErrorPage code={403} />} />
+            <Route path="/500" element={<ErrorPage code={500} />} />
+            <Route path="*" element={<ErrorPage code={404} />} />
           </Routes>
           <Toaster
             position="top-right"
