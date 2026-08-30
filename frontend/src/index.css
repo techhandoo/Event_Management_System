@@ -31,7 +31,7 @@
 
     --radius: 0.625rem;
     --success: 16  185 129;
-    --warning: 245 158 11;
+    --warning: 245 158  11;
     --danger:  239 68  68;
   }
 
@@ -48,7 +48,6 @@
     @apply text-surface-800 tracking-tight;
   }
 
-  /* Scrollbar styling */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 3px; }
@@ -58,7 +57,7 @@
 @layer components {
   /* ── Buttons ──────────────────────────────────────── */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-150
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2
            disabled:pointer-events-none disabled:opacity-50;
   }
@@ -66,13 +65,29 @@
   .btn-primary {
     @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 shadow-brand;
   }
+  .btn-primary:hover {
+    box-shadow: 0 4px 14px -2px rgba(0, 112, 243, 0.4), 0 2px 6px -1px rgba(0, 112, 243, 0.2);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 112, 243, 0.2);
+  }
 
   .btn-secondary {
     @apply btn bg-white text-surface-700 border border-surface-200 hover:bg-surface-50 hover:border-surface-300 active:bg-surface-100 shadow-xs;
   }
+  .btn-secondary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px -2px rgb(16 24 40 / 0.08);
+  }
 
   .btn-danger {
     @apply btn bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm;
+  }
+  .btn-danger:hover {
+    box-shadow: 0 4px 14px -2px rgba(239, 68, 68, 0.4);
+    transform: translateY(-1px);
   }
 
   .btn-ghost {
@@ -94,9 +109,12 @@
   /* ── Inputs ───────────────────────────────────────── */
   .input {
     @apply flex h-10 w-full rounded-lg border border-surface-200 bg-white px-3.5 py-2 text-sm text-surface-900
-           placeholder:text-surface-400 transition-all duration-150
+           placeholder:text-surface-400 transition-all duration-200
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/20 focus-visible:border-brand-600
            disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .input:focus {
+    box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
   }
 
   .input-error {
@@ -130,7 +148,11 @@
   }
 
   .card-hover {
-    @apply card hover:shadow-card-hover hover:border-surface-200 transition-all duration-200;
+    @apply card hover:shadow-card-hover hover:border-surface-200 transition-all duration-300;
+  }
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px -5px rgb(16 24 40 / 0.08), 0 4px 10px -3px rgb(16 24 40 / 0.04);
   }
 
   .card-header {
@@ -219,6 +241,71 @@
   /* ── Dividers ─────────────────────────────────────── */
   .divider {
     @apply border-t border-surface-100;
+  }
+
+  /* ── Enhanced hover effects ───────────────────────── */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px -2px rgb(16 24 40 / 0.1);
+  }
+
+  .hover-glow {
+    transition: box-shadow 0.3s ease;
+  }
+  .hover-glow:hover {
+    box-shadow: 0 0 20px -4px rgba(0, 112, 243, 0.2);
+  }
+
+  .hover-scale {
+    transition: transform 0.2s ease;
+  }
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+  /* ── Gradient text ────────────────────────────────── */
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-600 to-blue-500 bg-clip-text text-transparent;
+  }
+
+  /* ── Shimmer effect for loading ───────────────────── */
+  .shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── Pulse dot ────────────────────────────────────── */
+  .pulse-dot {
+    @apply relative;
+  }
+  .pulse-dot::after {
+    content: '';
+    @apply absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full;
+    animation: pulse-ring 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  }
+
+  /* ── Smooth page transitions ──────────────────────── */
+  .page-enter {
+    animation: pageEnter 0.3s ease-out;
+  }
+
+  @keyframes pageEnter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
 

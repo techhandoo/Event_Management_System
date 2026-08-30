@@ -100,44 +100,7 @@ jobs:
           path: frontend/dist/
           retention-days: 7
 
-  # ─── Deploy to Render ────────────────────────────────────
-  deploy-backend:
-    name: Deploy Backend to Render
-    runs-on: ubuntu-latest
-    needs: [backend]
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Render
-        uses: johnbeynon/render-deploy-action@v1.0.3
-        with:
-          service-id: ${{ secrets.RENDER_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
-
-  # ─── Deploy Frontend to Vercel ───────────────────────────
-  deploy-frontend:
-    name: Deploy Frontend to Vercel
-    runs-on: ubuntu-latest
-    needs: [frontend]
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./frontend
-          vercel-args: '--prod'
+  # ─── Deploy handled by platform auto-deploy ───────────
+  # Render auto-deploys backend on push to main
+  # Vercel auto-deploys frontend on push to main
+  # No deploy jobs needed in CI — it would cause double deploys

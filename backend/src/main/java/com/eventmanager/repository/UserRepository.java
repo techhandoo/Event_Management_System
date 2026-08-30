@@ -19,6 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
+    boolean existsByRole(Role role);
+
     Page<User> findByRole(Role role, Pageable pageable);
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role")
