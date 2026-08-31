@@ -55,12 +55,19 @@ export default function EditEventPage() {
     try {
       await api.put(`/events/${id}`, {
         ...data,
+        startTime: data.startTime ? data.startTime + ':00' : data.startTime,
+        endTime: data.endTime ? data.endTime + ':00' : data.endTime,
         priceCents: Math.round(data.priceCents * 100),
       });
       toast.success('Event updated!');
       navigate('/organizer');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update event');
+      const resp = err.response?.data;
+      if (resp?.data && typeof resp.data === 'object') {
+        Object.entries(resp.data).forEach(([f, m]) => toast.error(`${f}: ${m}`));
+      } else {
+        toast.error(resp?.message || 'Failed to update event');
+      }
     } finally { setSubmitting(false); }
   };
 
@@ -145,10 +152,10 @@ export default function EditEventPage() {
               <Clock size={14} className="text-brand-500" /> Schedule
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="form-item">
-                <label className="label">Start time</label>
+              <div className="form-item">                  <label className="label">Start time</label>
                 <input type="datetime-local" {...register('startTime', { required: 'Start time is required' })}
                   className={`input ${errors.startTime ? 'input-error' : ''}`} />
+                <p className="text-xs text-surface-500 mt-1">Must be a future date & time</p>
                 {errors.startTime && <p className="form-message">{errors.startTime.message}</p>}
               </div>
               <div className="form-item">

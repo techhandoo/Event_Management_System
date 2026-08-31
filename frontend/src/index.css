@@ -114,6 +114,7 @@
     color: #e2e8f0;
   }
   .label { @apply text-sm font-medium text-surface-500 leading-none; }
+  .form-label { @apply flex items-center gap-1.5 text-sm font-medium text-surface-600 mb-1.5; }
   .form-item { @apply space-y-2; }
   .form-message { @apply text-xs text-red-400 mt-1.5; }
 
