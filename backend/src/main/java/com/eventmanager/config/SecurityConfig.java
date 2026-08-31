@@ -72,14 +72,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(java.util.List.of(
+        // Spring Boot 3 requires allowedOriginPatterns (not allowedOrigins) when allowCredentials=true
+        config.setAllowedOriginPatterns(java.util.List.of(
                 "http://localhost:5173",
                 "http://localhost:3000",
                 "https://event-management-system-five-mauve.vercel.app",
-                "https://eventry.vercel.app"
+                "https://eventry.vercel.app",
+                "*"
         ));
-        config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(java.util.List.of("*"));
+        config.setExposedHeaders(java.util.List.of("Authorization", "Refresh-Token"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

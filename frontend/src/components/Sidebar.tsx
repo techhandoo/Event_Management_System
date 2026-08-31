@@ -4,7 +4,7 @@ import { useSidebar } from '../context/SidebarContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Ticket, Shield, PlusCircle,
-  ChevronLeft, ChevronRight, Zap, Search, BarChart3, Users, LogOut
+  ChevronLeft, ChevronRight, Search, BarChart3, Users, LogOut
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -48,9 +48,14 @@ export default function Sidebar() {
     >
       {/* Brand */}
       <div className="h-16 flex items-center border-b border-white/[0.06] px-4">
-        <Link to={homeForRole(user?.role)} className="flex items-center gap-3 overflow-hidden">
-          <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-brand-500 to-violet-500 rounded-xl flex items-center justify-center shadow-glow">
-            <Zap className="text-white" size={18} />
+        <Link to={homeForRole(user?.role)} className="flex items-center gap-3 overflow-hidden group">
+          <div className="relative flex-shrink-0 w-9 h-9">
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-500 via-violet-500 to-brand-400 rounded-xl rotate-3 group-hover:rotate-6 transition-transform duration-300" />
+            <div className="relative w-9 h-9 bg-gradient-to-br from-brand-500 via-violet-500 to-brand-400 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.4)]">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+            </div>
           </div>
           <AnimatePresence>
             {!collapsed && (
@@ -59,9 +64,9 @@ export default function Sidebar() {
                 animate={{ opacity: 1, width: 'auto' }}
                 exit={{ opacity: 0, width: 0 }}
                 transition={{ duration: 0.15 }}
-                className="text-lg font-bold text-surface-900 whitespace-nowrap overflow-hidden tracking-tight"
+                className="text-lg font-extrabold text-surface-900 whitespace-nowrap overflow-hidden tracking-tight"
               >
-                Eventry
+                <span>Event</span><span className="bg-gradient-to-r from-brand-400 to-violet-400 bg-clip-text text-transparent">ry</span>
               </motion.span>
             )}
           </AnimatePresence>

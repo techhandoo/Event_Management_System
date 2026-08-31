@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 export default function LandingHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -16,11 +16,19 @@ export default function LandingHeader() {
     <header className="fixed top-0 left-0 right-0 z-50 glass-nav">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-violet-500 rounded-lg flex items-center justify-center shadow-glow">
-              <Zap className="w-4 h-4 text-white" />
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="relative w-9 h-9">
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-500 via-violet-500 to-brand-400 rounded-xl rotate-3 group-hover:rotate-6 transition-transform duration-300" />
+              <div className="relative w-9 h-9 bg-gradient-to-br from-brand-500 via-violet-500 to-brand-400 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.4)]">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+              </div>
             </div>
-            <span className="text-lg font-bold text-surface-900 tracking-tight">Eventry</span>
+            <span className="text-lg font-extrabold tracking-tight">
+              <span className="text-white">Event</span>
+              <span className="bg-gradient-to-r from-brand-400 to-violet-400 bg-clip-text text-transparent">ry</span>
+            </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
