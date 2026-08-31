@@ -19,6 +19,14 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import CreateEventPage from './pages/CreateEventPage';
 import EditEventPage from './pages/EditEventPage';
 import ErrorPage from './pages/ErrorPage';
+import AboutPage from './pages/static/AboutPage';
+import BlogPage from './pages/static/BlogPage';
+import CareersPage from './pages/static/CareersPage';
+import ContactPage from './pages/static/ContactPage';
+import PrivacyPage from './pages/static/PrivacyPage';
+import TermsPage from './pages/static/TermsPage';
+import CookiesPage from './pages/static/CookiesPage';
+import ApiDocsPage from './pages/static/ApiDocsPage';
 import { ReactNode } from 'react';
 
 function ProtectedRoute({ children, roles }: { children: ReactNode; roles?: string[] }) {
@@ -55,6 +63,15 @@ function App() {
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             <Route path="/organizer" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><OrganizerDashboardPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']}><AdminDashboardPage /></ProtectedRoute>} />
+            {/* Static pages */}
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/careers" element={<CareersPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/cookies" element={<CookiesPage />} />
+            <Route path="/api-docs" element={<ApiDocsPage />} />
             <Route path="/" element={<LandingPage />} />
             <Route path="/403" element={<ErrorPage code={403} />} />
             <Route path="/500" element={<ErrorPage code={500} />} />

@@ -109,6 +109,10 @@
     @apply input appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1.25em_1.25em] pr-9;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   }
+  select option, select optgroup {
+    background-color: #1e293b;
+    color: #e2e8f0;
+  }
   .label { @apply text-sm font-medium text-surface-500 leading-none; }
   .form-item { @apply space-y-2; }
   .form-message { @apply text-xs text-red-400 mt-1.5; }
