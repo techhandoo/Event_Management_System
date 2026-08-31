@@ -17,22 +17,29 @@ import java.util.Optional;
 @Repository
 public interface EventRepository extends JpaRepository<Event, Long> {
 
+    @EntityGraph(attributePaths = {"organizer"})
     Page<Event> findByOrganizerIdAndStatus(Long organizerId, EventStatus status, Pageable pageable);
 
     @EntityGraph(attributePaths = {"organizer"})
     Page<Event> findByOrganizerId(Long organizerId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"organizer"})
     Page<Event> findByStatus(EventStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"organizer"})
     Page<Event> findByCityAndCategoryAndStatus(String city, String category, EventStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"organizer"})
     Page<Event> findByCityAndStatus(String city, EventStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"organizer"})
     Page<Event> findByCategoryAndStatus(String category, EventStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"organizer"})
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.startTime > :now ORDER BY e.startTime ASC")
     List<Event> findUpcomingPublishedEvents(@Param("now") LocalDateTime now, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"organizer"})
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND (LOWER(e.city) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(e.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<Event> searchEvents(@Param("query") String query, Pageable pageable);
 
