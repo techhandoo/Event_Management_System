@@ -5,7 +5,6 @@ import api from '../services/api';
 import { Event, PagedResponse, ApiResponse } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Clock, Users, Search, SlidersHorizontal, Zap, X, ChevronRight } from 'lucide-react';
-import NotificationCenter from '../components/NotificationCenter';
 import { Spinner, EmptyState, Pagination } from '../components/ui';
 
 const CATEGORIES = ['Conference', 'Workshop', 'Meetup', 'Concert', 'Sports', 'Exhibition', 'Seminar', 'Networking', 'Festival', 'Charity'];
@@ -14,7 +13,7 @@ const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { st
 const item = { hidden: { opacity: 0, y: 16, scale: 0.98 }, show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as const } } };
 
 export default function EventsPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,34 +50,24 @@ export default function EventsPage() {
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="min-h-screen bg-surface-0">
-      {/* Public header */}
-      <header className="h-16 glass-nav">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
-          <Link to="/events" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center shadow-brand group-hover:shadow-lg group-hover:shadow-brand-600/20 transition-shadow">
-              <Zap className="text-white" size={16} />
+    <div className={isAuthenticated ? '' : 'min-h-screen bg-surface-0'}>
+      {/* Public header — only for guests */}
+      {!isAuthenticated && (
+        <header className="h-16 glass-nav">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+            <Link to="/events" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center shadow-brand group-hover:shadow-lg group-hover:shadow-brand-600/20 transition-shadow">
+                <Zap className="text-white" size={16} />
+              </div>
+              <span className="text-lg font-bold text-surface-900 tracking-tight">Eventry</span>
+            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/login" className="btn-ghost text-sm">Sign in</Link>
+              <Link to="/register" className="btn-primary text-sm h-9">Get started</Link>
             </div>
-            <span className="text-lg font-bold text-surface-900 tracking-tight">Eventry</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            {isAuthenticated ? (
-              <>
-                <NotificationCenter />
-                <Link to="/dashboard" className="text-sm text-surface-500 hover:text-surface-800 font-medium hidden sm:block transition-colors">Dashboard</Link>
-                <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-violet-500 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-glow transition-colors cursor-pointer">
-                  {user?.fullName?.charAt(0)?.toUpperCase()}
-                </div>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="btn-ghost text-sm">Sign in</Link>
-                <Link to="/register" className="btn-primary text-sm h-9">Get started</Link>
-              </>
-            )}
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mb-8">

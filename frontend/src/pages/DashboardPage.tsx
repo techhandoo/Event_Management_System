@@ -28,16 +28,32 @@ export default function DashboardPage() {
   const cancelled = bookings.filter(b => b.status === 'CANCELLED').length;
   const totalSpent = bookings.filter(b => b.status === 'CONFIRMED').reduce((s, b) => s + b.totalCents, 0);
 
-  // Simulated sparkline data (in production, this would come from an API)
-  const monthlyBookings = [
-    { label: 'Jan', value: 2 }, { label: 'Feb', value: 5 }, { label: 'Mar', value: 3 },
-    { label: 'Apr', value: 8 }, { label: 'May', value: 6 }, { label: 'Jun', value: confirmed || 4 },
-  ];
+  // Derive monthly data from actual bookings (real data only)
+  const buildMonthlyFromBookings = (bkgs: Booking[], extract: (b: Booking) => number) => {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const now = new Date();
+    const map: Record<string, number> = {};
+    bkgs.forEach(b => {
+      const d = new Date(b.bookedAt);
+      const key = months[d.getMonth()];
+      map[key] = (map[key] || 0) + extract(b);
+    });
+    const result: { label: string; value: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = months[d.getMonth()];
+      result.push({ label: key, value: map[key] || 0 });
+    }
+    return result;
+  };
 
-  const monthlySpent = [
-    { label: 'Jan', value: 2500 }, { label: 'Feb', value: 4200 }, { label: 'Mar', value: 1800 },
-    { label: 'Apr', value: 6100 }, { label: 'May', value: 3900 }, { label: 'Jun', value: totalSpent || 2800 },
-  ];
+  const monthlyBookings = bookings.length > 0
+    ? buildMonthlyFromBookings(bookings, () => 1)
+    : [{ label: 'Total', value: confirmed }];
+
+  const monthlySpent = bookings.length > 0
+    ? buildMonthlyFromBookings(bookings.filter(b => b.status === 'CONFIRMED'), b => b.totalCents)
+    : [{ label: 'Total', value: totalSpent }];
 
   // Activity feed items
   const activities: ActivityItem[] = bookings.slice(0, 6).map((b) => ({
@@ -61,7 +77,6 @@ export default function DashboardPage() {
           icon={<Ticket size={20} />}
           label="Total Bookings"
           value={bookings.length}
-          trend={{ value: 12, label: 'vs last month' }}
           accent="brand"
           delay={0}
         />
@@ -69,7 +84,6 @@ export default function DashboardPage() {
           icon={<CheckCircle size={20} />}
           label="Confirmed"
           value={confirmed}
-          trend={{ value: 8, label: 'vs last month' }}
           accent="success"
           delay={0.05}
         />
@@ -77,7 +91,6 @@ export default function DashboardPage() {
           icon={<XCircle size={20} />}
           label="Cancelled"
           value={cancelled}
-          trend={{ value: cancelled > 0 ? -3 : 0, label: 'vs last month' }}
           accent="danger"
           delay={0.1}
         />
@@ -85,7 +98,6 @@ export default function DashboardPage() {
           icon={<DollarSign size={20} />}
           label="Total Spent"
           value={`$${(totalSpent / 100).toFixed(2)}`}
-          trend={{ value: 15, label: 'vs last month' }}
           accent="warning"
           delay={0.15}
         />

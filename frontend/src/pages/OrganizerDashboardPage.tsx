@@ -37,22 +37,40 @@ export default function OrganizerDashboardPage() {
   const handleDelete = async (id: number) => { if (!confirm('Cancel this event?')) return; try { await api.delete(`/events/${id}`); toast.success('Cancelled'); loadData(); } catch { toast.error('Failed'); } };
   const fmt = (c: number) => `$${(c / 100).toFixed(2)}`;
 
-  // Chart data
+  // Chart data — derived from real backend stats
   const statusBreakdown = [
     { name: 'Published', value: stats?.publishedEvents || 0, color: '#10B981' },
     { name: 'Draft', value: stats?.draftEvents || 0, color: '#F59E0B' },
     { name: 'Cancelled', value: Math.max(0, (stats?.totalEvents || 0) - (stats?.publishedEvents || 0) - (stats?.draftEvents || 0)), color: '#EF4444' },
   ];
 
-  const monthlyRevenue = [
-    { name: 'Jan', value: 12000 }, { name: 'Feb', value: 18500 }, { name: 'Mar', value: 15000 },
-    { name: 'Apr', value: 22000 }, { name: 'May', value: 19500 }, { name: 'Jun', value: stats?.totalRevenueCents || 16000 },
-  ];
+  // Use real event data to build per-month revenue from events
+  const buildMonthlyFromEvents = (evts: Event[], extract: (e: Event) => number) => {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const now = new Date();
+    const map: Record<string, number> = {};
+    evts.forEach(e => {
+      const d = new Date(e.createdAt);
+      const key = months[d.getMonth()];
+      map[key] = (map[key] || 0) + extract(e);
+    });
+    // Show last 6 months including current
+    const result: { name: string; value: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = months[d.getMonth()];
+      result.push({ name: key, value: map[key] || 0 });
+    }
+    return result;
+  };
 
-  const monthlyBookings = [
-    { name: 'Jan', value: 45 }, { name: 'Feb', value: 62 }, { name: 'Mar', value: 38 },
-    { name: 'Apr', value: 78 }, { name: 'May', value: 55 }, { name: 'Jun', value: stats?.totalBookings || 42 },
-  ];
+  const monthlyRevenue = events.length > 0
+    ? buildMonthlyFromEvents(events, e => e.priceCents * e.bookedCount)
+    : [{ name: 'Total', value: stats?.totalRevenueCents || 0 }];
+
+  const monthlyBookings = events.length > 0
+    ? buildMonthlyFromEvents(events, e => e.bookedCount)
+    : [{ name: 'Total', value: stats?.totalBookings || 0 }];
 
   // Activity feed
   const activities: ActivityItem[] = events.slice(0, 6).map(ev => ({
@@ -74,13 +92,13 @@ export default function OrganizerDashboardPage() {
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard icon={<Calendar size={20} />} label="Total Events" value={stats?.totalEvents || 0}
-          trend={{ value: 10, label: 'vs last month' }} accent="brand" delay={0} />
+          accent="brand" delay={0} />
         <KPICard icon={<Eye size={20} />} label="Published" value={stats?.publishedEvents || 0}
-          trend={{ value: 15, label: 'vs last month' }} accent="success" delay={0.05} />
+          accent="success" delay={0.05} />
         <KPICard icon={<Users size={20} />} label="Total Bookings" value={stats?.totalBookings || 0}
-          trend={{ value: 8, label: 'vs last month' }} accent="warning" delay={0.1} />
+          accent="warning" delay={0.1} />
         <KPICard icon={<DollarSign size={20} />} label="Revenue" value={fmt(stats?.totalRevenueCents || 0)}
-          trend={{ value: 22, label: 'vs last month' }} accent="brand" delay={0.15} />
+          accent="brand" delay={0.15} />
       </div>
 
       {/* Charts Row */}
@@ -92,8 +110,8 @@ export default function OrganizerDashboardPage() {
               <h3 className="text-sm font-semibold text-surface-800">Revenue Overview</h3>
               <p className="text-xs text-surface-400 mt-0.5">Monthly revenue in cents</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              <TrendingUp size={12} /> +22%
+            <div className="flex items-center gap-1.5 text-xs text-surface-400 font-semibold bg-white/[0.04] px-2 py-0.5 rounded-full border border-white/[0.06]">
+              <TrendingUp size={12} /> Revenue
             </div>
           </div>
           <div className="p-4">

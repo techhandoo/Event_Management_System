@@ -44,21 +44,41 @@ export default function AdminDashboardPage() {
   };
   const fmt = (c: number) => `$${(c / 100).toFixed(2)}`;
 
-  // Chart data
+  // Chart data — derived from real backend analytics
   const roleBreakdown = [
     { name: 'Attendees', value: analytics?.totalAttendees || 0, color: '#0070F3' },
     { name: 'Organizers', value: analytics?.totalOrganizers || 0, color: '#10B981' },
-    { name: 'Admins', value: Math.max(1, (analytics?.totalUsers || 0) - (analytics?.totalAttendees || 0) - (analytics?.totalOrganizers || 0)), color: '#8B5CF6' },
+    { name: 'Admins', value: Math.max(0, (analytics?.totalUsers || 0) - (analytics?.totalAttendees || 0) - (analytics?.totalOrganizers || 0)), color: '#8B5CF6' },
   ];
 
-  const userGrowth = [
-    { name: 'Jan', value: 120 }, { name: 'Feb', value: 185 }, { name: 'Mar', value: 240 },
-    { name: 'Apr', value: 310 }, { name: 'May', value: 380 }, { name: 'Jun', value: analytics?.totalUsers || 450 },
-  ];
+  // Derive per-month data from user join dates (real data only)
+  const buildMonthlyFromUsers = (usrList: User[]) => {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const now = new Date();
+    const map: Record<string, number> = {};
+    usrList.forEach(u => {
+      const d = new Date(u.createdAt);
+      const key = months[d.getMonth()];
+      map[key] = (map[key] || 0) + 1;
+    });
+    const result: { name: string; value: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = months[d.getMonth()];
+      result.push({ name: key, value: map[key] || 0 });
+    }
+    return result;
+  };
 
+  const userGrowth = users.length > 0
+    ? buildMonthlyFromUsers(users)
+    : [{ name: 'Total', value: analytics?.totalUsers || 0 }];
+
+  // For event growth we don't have all events, so show total only
   const eventGrowth = [
-    { name: 'Jan', value: 15 }, { name: 'Feb', value: 22 }, { name: 'Mar', value: 18 },
-    { name: 'Apr', value: 35 }, { name: 'May', value: 28 }, { name: 'Jun', value: analytics?.totalEvents || 32 },
+    { name: 'Total Events', value: analytics?.totalEvents || 0 },
+    { name: 'Published', value: analytics?.publishedEvents || 0 },
+    { name: 'Bookings', value: analytics?.totalBookings || 0 },
   ];
 
   // Activity feed from recent users
@@ -99,14 +119,14 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard icon={<Users size={20} />} label="Total Users" value={analytics?.totalUsers || 0}
           sub={`${analytics?.totalOrganizers || 0} organizers · ${analytics?.totalAttendees || 0} attendees`}
-          trend={{ value: 18, label: 'vs last month' }} accent="brand" delay={0} />
+          accent="brand" delay={0} />
         <KPICard icon={<Calendar size={20} />} label="Total Events" value={analytics?.totalEvents || 0}
           sub={`${analytics?.publishedEvents || 0} published`}
-          trend={{ value: 12, label: 'vs last month' }} accent="success" delay={0.05} />
+          accent="success" delay={0.05} />
         <KPICard icon={<TrendingUp size={20} />} label="Total Bookings" value={analytics?.totalBookings || 0}
-          trend={{ value: 25, label: 'vs last month' }} accent="warning" delay={0.1} />
+          accent="warning" delay={0.1} />
         <KPICard icon={<DollarSign size={20} />} label="Total Revenue" value={fmt(analytics?.totalRevenueCents || 0)}
-          trend={{ value: 30, label: 'vs last month' }} accent="brand" delay={0.15} />
+          accent="brand" delay={0.15} />
       </div>
 
       {/* Charts Row */}
@@ -118,8 +138,8 @@ export default function AdminDashboardPage() {
               <h3 className="text-sm font-semibold text-surface-800">User Growth</h3>
               <p className="text-xs text-surface-400 mt-0.5">Monthly user registrations</p>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              <TrendingUp size={12} /> +18%
+            <div className="flex items-center gap-1.5 text-xs text-surface-400 font-semibold bg-white/[0.04] px-2 py-0.5 rounded-full border border-white/[0.06]">
+              <TrendingUp size={12} /> Users
             </div>
           </div>
           <div className="p-4">

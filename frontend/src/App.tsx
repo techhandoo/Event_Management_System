@@ -10,7 +10,7 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminSetupPage from './pages/AdminSetupPage';
-import EventsPage from './pages/EventsPage';
+import EventsPageWrapper from './components/EventsPageWrapper';
 import EventDetailPage from './pages/EventDetailPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import DashboardPage from './pages/DashboardPage';
@@ -55,7 +55,7 @@ function App() {
             <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
             <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
             <Route path="/setup-admin" element={<AdminSetupPage />} />
-            <Route path="/events" element={<EventsPage />} />
+            <Route path="/events" element={<EventsPageWrapper />} />
             <Route path="/events/:id" element={<EventDetailPage />} />
             <Route path="/events/create" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><CreateEventPage /></ProtectedRoute>} />
             <Route path="/events/:id/edit" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><EditEventPage /></ProtectedRoute>} />
