@@ -98,7 +98,7 @@ export default function TopBar() {
                   </div>
                   <div className="py-1.5">
                     <button
-                      onClick={() => { setMenuOpen(false); navigate('/dashboard'); }}
+                      onClick={() => { setMenuOpen(false); navigate('/profile'); }}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-surface-500 hover:bg-white/[0.06] hover:text-surface-700 transition-colors"
                     >
                       <User size={15} /> Profile
