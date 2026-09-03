@@ -106,8 +106,8 @@
         <!-- Razorpay Payment Gateway -->
         <dependency>
             <groupId>com.razorpay</groupId>
-            <artifactId>razorpay-java-sdk</artifactId>
-            <version>1.4.5</version>
+            <artifactId>razorpay-java</artifactId>
+            <version>1.4.10</version>
         </dependency>
 
         <!-- SpringDoc OpenAPI -->
