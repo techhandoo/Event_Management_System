@@ -48,6 +48,18 @@ public class Booking {
     @Builder.Default
     private BookingStatus status = BookingStatus.PENDING;
 
+    @Column(name = "payment_id", length = 255)
+    private String paymentId;
+
+    @Column(name = "razorpay_order_id", length = 255)
+    private String razorpayOrderId;
+
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
     @Column(name = "booked_at", updatable = false)
     @CreationTimestamp
     private LocalDateTime bookedAt;

@@ -33,6 +33,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByEventIdAndStatus(Long eventId, BookingStatus status);
 
+    Optional<Booking> findByRazorpayOrderId(String razorpayOrderId);
+
     @Query("SELECT COUNT(b) FROM Booking b")
     long countAll();
 
