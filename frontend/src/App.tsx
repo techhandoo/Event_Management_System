@@ -18,6 +18,7 @@ import OrganizerDashboardPage from './pages/OrganizerDashboardPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import CreateEventPage from './pages/CreateEventPage';
 import EditEventPage from './pages/EditEventPage';
+import ProfilePage from './pages/ProfilePage';
 import ErrorPage from './pages/ErrorPage';
 import AboutPage from './pages/static/AboutPage';
 import BlogPage from './pages/static/BlogPage';
@@ -63,6 +64,7 @@ function App() {
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             <Route path="/organizer" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><OrganizerDashboardPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']}><AdminDashboardPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             {/* Static pages */}
             <Route path="/about" element={<AboutPage />} />
             <Route path="/blog" element={<BlogPage />} />
