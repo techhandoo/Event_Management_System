@@ -3,6 +3,7 @@ package com.eventmanager.controller;
 import com.eventmanager.dto.response.ApiResponse;
 import com.eventmanager.model.Booking;
 import com.eventmanager.service.PaymentService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -15,6 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payments")
+@ConditionalOnBean(PaymentService.class)
 public class PaymentController {
 
     private final PaymentService paymentService;

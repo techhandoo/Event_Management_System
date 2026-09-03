@@ -54,7 +54,7 @@ class AdminServiceTest {
         when(userRepository.countByRole(Role.ORGANIZER)).thenReturn(20L);
         when(userRepository.countByRole(Role.ATTENDEE)).thenReturn(80L);
         when(eventRepository.count()).thenReturn(50L);
-        when(eventRepository.countByOrganizerIdAndStatus(null, EventStatus.PUBLISHED)).thenReturn(40L);
+        when(eventRepository.countByStatus(EventStatus.PUBLISHED)).thenReturn(40L);
         when(bookingRepository.countAll()).thenReturn(500L);
         when(bookingRepository.sumAllRevenue()).thenReturn(25000L);
 
