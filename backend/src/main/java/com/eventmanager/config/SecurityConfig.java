@@ -57,7 +57,6 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .headers(headers -> headers
                 .frameOptions(frame -> frame.deny())
-                .contentTypeOptions(contentType -> contentType.prevent(true))
                 .httpStrictTransportSecurity(hsts -> hsts
                     .maxAgeInSeconds(63072000)
                     .includeSubDomains(true)
@@ -76,7 +75,6 @@ public class SecurityConfig {
                 .permissionsPolicy(permissions -> permissions.policy(
                     "camera=(), microphone=(), geolocation=(), payment=(self)"
                 ))
-                .httpCache(httpCache -> httpCache.cacheControl(cache -> cache.mustRevalidate(true)))
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
