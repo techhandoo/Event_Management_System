@@ -45,9 +45,12 @@ public class AccountLockoutFilter extends OncePerRequestFilter {
             return;
         }
 
-        String email = extractEmailFromBody(request);
+        // Cache the body so it can be read both here AND by downstream controllers
+        CachedBodyRequest cachedRequest = new CachedBodyRequest(request);
+
+        String email = extractEmailFromBody(cachedRequest);
         if (email == null) {
-            filterChain.doFilter(request, response);
+            filterChain.doFilter(cachedRequest, response);
             return;
         }
 
@@ -62,7 +65,7 @@ public class AccountLockoutFilter extends OncePerRequestFilter {
             return;
         }
 
-        filterChain.doFilter(request, response);
+        filterChain.doFilter(cachedRequest, response);
     }
 
     public void recordLoginFailure(String email) {
@@ -95,9 +98,8 @@ public class AccountLockoutFilter extends OncePerRequestFilter {
      * Safely extract email from login request body.
      * Uses a CachedBodyHttpServletRequest wrapper to allow re-reading.
      */
-    private String extractEmailFromBody(HttpServletRequest request) {
+    private String extractEmailFromBody(CachedBodyRequest cached) {
         try {
-            CachedBodyRequest cached = new CachedBodyRequest(request);
             byte[] body = cached.getCachedBody();
             String bodyStr = new String(body);
 

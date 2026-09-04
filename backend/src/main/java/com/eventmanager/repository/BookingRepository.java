@@ -40,4 +40,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT COALESCE(SUM(b.totalCents), 0) FROM Booking b WHERE b.status = 'CONFIRMED'")
     long sumAllRevenue();
+
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.event.organizer.id = :organizerId AND b.status = 'CONFIRMED'")
+    long countConfirmedByOrganizerId(@Param("organizerId") Long organizerId);
 }

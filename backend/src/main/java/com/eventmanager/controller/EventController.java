@@ -38,6 +38,48 @@ public class EventController {
         return ResponseEntity.ok(ApiResponse.success(events));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<EventResponse>>> searchEvents(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        size = Math.min(size, 50);
+        Page<EventResponse> events = eventService.searchEvents(q,
+                PageRequest.of(page, size, Sort.by("startTime").ascending()));
+        return ResponseEntity.ok(ApiResponse.success(events));
+    }
+
+    @GetMapping("/my/stats")
+    public ResponseEntity<ApiResponse<OrganizerStatsResponse>> getMyStats(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        OrganizerStatsResponse stats = eventService.getOrganizerStats(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(stats));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<Page<EventResponse>>> getMyEvents(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<EventResponse> events = eventService.getOrganizerEvents(userDetails.getUsername(),
+                PageRequest.of(page, size, Sort.by("createdAt").descending()));
+        return ResponseEntity.ok(ApiResponse.success(events));
+    }
+
+    @PutMapping("/{id}/publish")
+    public ResponseEntity<ApiResponse<EventResponse>> publishEvent(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        EventResponse event = eventService.publishEvent(id, userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("Event published successfully", event));
+    }
+
+    @GetMapping("/{id}/availability")
+    public ResponseEntity<ApiResponse<Integer>> getAvailability(@PathVariable Long id) {
+        int availability = eventService.getAvailability(id);
+        return ResponseEntity.ok(ApiResponse.success(availability));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<EventResponse>> getEvent(@PathVariable Long id) {
         EventResponse event = eventService.getEvent(id);
@@ -68,47 +110,5 @@ public class EventController {
             @AuthenticationPrincipal UserDetails userDetails) {
         eventService.deleteEvent(id, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success("Event cancelled successfully", null));
-    }
-
-    @PutMapping("/{id}/publish")
-    public ResponseEntity<ApiResponse<EventResponse>> publishEvent(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        EventResponse event = eventService.publishEvent(id, userDetails.getUsername());
-        return ResponseEntity.ok(ApiResponse.success("Event published successfully", event));
-    }
-
-    @GetMapping("/{id}/availability")
-    public ResponseEntity<ApiResponse<Integer>> getAvailability(@PathVariable Long id) {
-        int availability = eventService.getAvailability(id);
-        return ResponseEntity.ok(ApiResponse.success(availability));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<EventResponse>>> searchEvents(
-            @RequestParam String q,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        size = Math.min(size, 50);
-        Page<EventResponse> events = eventService.searchEvents(q,
-                PageRequest.of(page, size, Sort.by("startTime").ascending()));
-        return ResponseEntity.ok(ApiResponse.success(events));
-    }
-
-    @GetMapping("/my/stats")
-    public ResponseEntity<ApiResponse<OrganizerStatsResponse>> getMyStats(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        OrganizerStatsResponse stats = eventService.getOrganizerStats(userDetails.getUsername());
-        return ResponseEntity.ok(ApiResponse.success(stats));
-    }
-
-    @GetMapping("/my")
-    public ResponseEntity<ApiResponse<Page<EventResponse>>> getMyEvents(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<EventResponse> events = eventService.getOrganizerEvents(userDetails.getUsername(),
-                PageRequest.of(page, size, Sort.by("createdAt").descending()));
-        return ResponseEntity.ok(ApiResponse.success(events));
     }
 }

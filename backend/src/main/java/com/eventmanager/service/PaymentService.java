@@ -82,9 +82,21 @@ public class PaymentService {
             ));
 
             Order order = razorpayClient.orders.create(orderRequest);
+            String orderId = order.get("id");
+
+            // Create a PENDING booking so verifyPayment can find it later
+            Booking booking = Booking.builder()
+                    .user(user)
+                    .event(event)
+                    .quantity(quantity)
+                    .totalCents(totalCents)
+                    .status(BookingStatus.PENDING)
+                    .razorpayOrderId(orderId)
+                    .build();
+            bookingRepository.save(booking);
 
             return Map.of(
-                    "orderId", order.get("id"),
+                    "orderId", orderId,
                     "amount", totalCents,
                     "currency", "INR",
                     "keyId", razorpayKeyId,

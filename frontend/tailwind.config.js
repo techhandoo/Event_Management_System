@@ -67,6 +67,7 @@ export default {
         'card-lg':    '0 25px 50px -12px rgb(0 0 0 / 0.35)',
         'dropdown':   '0 16px 70px -12px rgb(0 0 0 / 0.5)',
         'sidebar':    '4px 0 24px -4px rgb(0 0 0 / 0.2)',
+        'brand':      '0 4px 14px -3px rgb(99 102 241 / 0.35)',
       },
       borderRadius: {
         '4xl': '2rem',

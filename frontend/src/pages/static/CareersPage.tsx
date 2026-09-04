@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import StaticPageLayout from '../../components/StaticPageLayout';
 import { Code, Palette, Megaphone, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const openings = [
  {
@@ -80,6 +81,7 @@ export default function CareersPage() {
       key={job.title}
       variants={fadeUp}
       className="surface-card p-6 group hover:border-brand-500/20 transition-all duration-300 cursor-pointer"
+      onClick={() => toast('Application portal coming soon', { icon: '💼' })}
      >
       <div className="flex items-start justify-between gap-4">
        <div className="flex-1">
