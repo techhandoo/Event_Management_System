@@ -1,4 +1,4 @@
-# 🎫 Eventry — Event Management Platform
+
 
 A full-stack event management platform built with **Spring Boot 3**, **React 18**, **Kafka**, and **PostgreSQL**. Users can register, authenticate, create and manage events, handle bookings with Razorpay payments, and receive real-time notifications.
 
@@ -254,5 +254,3 @@ Once the backend is running, visit:
 ---
 
 ## 📄 License
-
-MIT License
