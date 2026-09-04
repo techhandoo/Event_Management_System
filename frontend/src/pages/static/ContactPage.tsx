@@ -15,12 +15,17 @@ export default function ContactPage() {
 
  const handleSubmit = (e: React.FormEvent) => {
   e.preventDefault();
+  if (!form.name.trim() || !form.email.trim() || !form.subject.trim() || !form.message.trim()) {
+   toast.error('Please fill in all fields');
+   return;
+  }
   setLoading(true);
+  // TODO: Connect to backend email service
   setTimeout(() => {
    toast.success('Message sent! We\'ll get back to you within 24 hours.');
    setForm({ name: '', email: '', subject: '', message: '' });
    setLoading(false);
-  }, 1000);
+  }, 1500);
  };
 
  return (

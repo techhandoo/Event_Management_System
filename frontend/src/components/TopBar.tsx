@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, ChevronDown, Search, User, Settings, HelpCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import NotificationCenter from './NotificationCenter';
 import StatusBadge from './ui/StatusBadge';
 import { cn } from '../lib/utils';
@@ -102,11 +103,13 @@ export default function TopBar() {
            <User size={15} /> Profile
           </button>
           <button
+           onClick={() => { setMenuOpen(false); navigate('/profile'); }}
            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-surface-500 hover:bg-white/[0.06] hover:text-surface-700 transition-colors"
           >
            <Settings size={15} /> Settings
           </button>
           <button
+           onClick={() => { setMenuOpen(false); toast('Help center coming soon', { icon: '❓' }); }}
            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-surface-500 hover:bg-white/[0.06] hover:text-surface-700 transition-colors"
           >
            <HelpCircle size={15} /> Help

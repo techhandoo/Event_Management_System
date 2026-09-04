@@ -11,6 +11,7 @@ import com.eventmanager.mapper.EventMapper;
 import com.eventmanager.model.Event;
 import com.eventmanager.model.User;
 import com.eventmanager.model.enums.EventStatus;
+import com.eventmanager.repository.BookingRepository;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,15 +29,18 @@ public class EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final EventMapper eventMapper;
+    private final BookingRepository bookingRepository;
     @Autowired(required = false)
     private EventEventProducer eventEventProducer;
 
     public EventService(EventRepository eventRepository,
                         UserRepository userRepository,
-                        EventMapper eventMapper) {
+                        EventMapper eventMapper,
+                        BookingRepository bookingRepository) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.eventMapper = eventMapper;
+        this.bookingRepository = bookingRepository;
     }
 
     @Transactional
@@ -208,11 +212,13 @@ public class EventService {
         long publishedEvents = eventRepository.countByOrganizerIdAndStatus(organizer.getId(), EventStatus.PUBLISHED);
         long draftEvents = eventRepository.countByOrganizerIdAndStatus(organizer.getId(), EventStatus.DRAFT);
         long totalRevenue = eventRepository.sumRevenueByOrganizerId(organizer.getId());
+        long totalBookings = bookingRepository.countConfirmedByOrganizerId(organizer.getId());
 
         return OrganizerStatsResponse.builder()
                 .totalEvents(totalEvents)
                 .publishedEvents(publishedEvents)
                 .draftEvents(draftEvents)
+                .totalBookings(totalBookings)
                 .totalRevenueCents(totalRevenue)
                 .build();
     }

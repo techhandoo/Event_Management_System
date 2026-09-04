@@ -70,7 +70,7 @@ export default function MyBookingsPage() {
            {b.totalCents === 0 ? 'Free' : `$${(b.totalCents / 100).toFixed(2)}`}
           </td>
           <td className="px-6 text-xs text-surface-400 hidden md:table-cell">
-           {b.totalCents === 0 ? '—' : (b as any).paymentId ? <span className="text-emerald-500">Paid</span> : <span className="text-amber-500">Pending</span>}
+           {b.totalCents === 0 ? '—' : b.paymentId ? <span className="text-emerald-500">Paid</span> : <span className="text-amber-500">Pending</span>}
           </td>
           <td className="px-6"><StatusBadge status={b.status} /></td>
           <td className="px-6 text-right">

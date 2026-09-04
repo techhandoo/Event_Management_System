@@ -165,7 +165,8 @@ export default function EventDetailPage() {
         </div>
        </div>
 
-       {/* Booking widget */}
+       {/* Booking widget — only for PUBLISHED events */}
+       {event.status === 'PUBLISHED' ? (
        <div className="bg-surface-50 rounded-xl p-6 border border-surface-150 hover:shadow-card transition-shadow duration-300">
         <h3 className="text-sm font-semibold text-surface-800 mb-4">Book tickets</h3>
         <div className="flex items-center gap-3 mb-4">
@@ -192,6 +193,13 @@ export default function EventDetailPage() {
          {booking ? 'Booking...' : event.availableCapacity === 0 ? 'Sold out' : 'Book now'}
         </button>
        </div>
+       ) : (
+       <div className="bg-surface-50 rounded-xl p-6 border border-surface-150 text-center">
+        <p className="text-sm font-medium text-surface-600">
+         {event.status === 'DRAFT' ? 'This event is not yet published' : 'This event is no longer available'}
+        </p>
+       </div>
+       )}
       </div>
 
       {/* Description */}

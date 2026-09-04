@@ -48,6 +48,10 @@ export interface Booking {
   quantity: number;
   totalCents: number;
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'REFUNDED';
+  paymentId: string | null;
+  razorpayOrderId: string | null;
+  paymentMethod: string | null;
+  paidAt: string | null;
   bookedAt: string;
 }
 

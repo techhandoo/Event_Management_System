@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import StaticPageLayout from '../../components/StaticPageLayout';
 import { Calendar, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const posts = [
  {
@@ -89,6 +90,7 @@ export default function BlogPage() {
       key={i}
       variants={fadeUp}
       className="surface-card p-6 group hover:border-brand-500/20 transition-all duration-300 cursor-pointer"
+      onClick={() => toast('Full article coming soon', { icon: '📝' })}
      >
       <div className="flex items-start justify-between gap-4">
        <div className="flex-1 min-w-0">
