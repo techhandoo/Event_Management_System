@@ -54,12 +54,10 @@ public class PaymentService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
 
-        Event event = eventRepository.findById(eventId)
+        Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", "id", eventId));
 
-        if (event.getStatus() != com.eventmanager.model.enums.EventStatus.PUBLISHED) {
-            throw new IllegalArgumentException("Event is not available for booking");
-        }
+        event.validateForBooking(quantity);
 
         // Prevent duplicate active bookings
         List<BookingStatus> activeStatuses = List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED);
@@ -134,6 +132,12 @@ public class PaymentService {
             throw new org.springframework.security.access.AccessDeniedException("Unauthorized");
         }
 
+        Event event = eventRepository.findByIdForUpdate(booking.getEvent().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", booking.getEvent().getId()));
+
+        event.incrementBookedCount(booking.getQuantity());
+        eventRepository.save(event);
+
         booking.setPaymentId(razorpayPaymentId);
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.setPaidAt(LocalDateTime.now());
@@ -146,18 +150,12 @@ public class PaymentService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
 
-        Event event = eventRepository.findById(eventId)
+        Event event = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event", "id", eventId));
 
-        if (event.getStatus() != com.eventmanager.model.enums.EventStatus.PUBLISHED) {
-            throw new IllegalArgumentException("Event is not available for booking");
-        }
+        event.validateForBooking(quantity);
 
-        if (!event.hasAvailableCapacity(quantity)) {
-            throw new com.eventmanager.exception.InsufficientCapacityException(event.getAvailableCapacity(), quantity);
-        }
-
-        event.setBookedCount(event.getBookedCount() + quantity);
+        event.incrementBookedCount(quantity);
         eventRepository.save(event);
 
         Booking booking = Booking.builder()

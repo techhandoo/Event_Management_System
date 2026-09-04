@@ -63,6 +63,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Password has been reset successfully"));
     }
 
+    @PostMapping("/logout")
+    @Operation(summary = "Logout — revoke refresh token")
+    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader(value = "Refresh-Token", required = false) String refreshToken) {
+        authService.logout(refreshToken);
+        return ResponseEntity.ok(ApiResponse.success("Logged out successfully"));
+    }
+
     @GetMapping("/validate-reset-token")
     @Operation(summary = "Check if a password reset token is valid")
     public ResponseEntity<ApiResponse<ValidateTokenResponse>> validateResetToken(@RequestParam String token) {

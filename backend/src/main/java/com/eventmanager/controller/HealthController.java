@@ -38,8 +38,7 @@ public class HealthController {
 
     /**
      * Deep health check — verifies DB, Redis, Kafka connectivity.
-     * Used by UptimeRobot or any monitoring service.
-     * Returns 200 only if ALL dependencies are reachable.
+     * Only accessible to ADMIN users. Public uses /api/uptime instead.
      */
     @GetMapping("/api/health")
     public ResponseEntity<Map<String, Object>> healthCheck() {
@@ -50,7 +49,7 @@ public class HealthController {
 
         Map<String, String> dependencies = new LinkedHashMap<>();
 
-        // Check PostgreSQL
+        // Check PostgreSQL — hide error details from response
         try (Connection conn = dataSource.getConnection()) {
             if (conn.isValid(3)) {
                 dependencies.put("database", "UP");
@@ -60,7 +59,7 @@ public class HealthController {
             }
         } catch (Exception e) {
             log.warn("Health check: database DOWN - {}", e.getMessage());
-            dependencies.put("database", "DOWN: " + e.getMessage());
+            dependencies.put("database", "DOWN"); // Don't expose exception message
             health.put("status", "DOWN");
         }
 
@@ -76,25 +75,25 @@ public class HealthController {
                 }
             } catch (Exception e) {
                 log.warn("Health check: redis DOWN - {}", e.getMessage());
-                dependencies.put("redis", "DOWN: " + e.getMessage());
+                dependencies.put("redis", "DOWN");
                 health.put("status", "DEGRADED");
             }
         } else {
             dependencies.put("redis", "DISABLED");
         }
 
-        // Check Kafka via AdminClient
+        // Check Kafka via AdminClient — hide error details
         try {
             Properties props = new Properties();
             props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
             try (AdminClient adminClient = AdminClient.create(props)) {
                 ListTopicsResult topics = adminClient.listTopics();
                 Set<String> names = topics.names().get();
-                dependencies.put("kafka", "UP (topics: " + names.size() + ")");
+                dependencies.put("kafka", "UP (" + names.size() + " topics)");
             }
         } catch (Exception e) {
             log.warn("Health check: kafka DOWN - {}", e.getMessage());
-            dependencies.put("kafka", "DOWN: " + e.getMessage());
+            dependencies.put("kafka", "DOWN");
             health.put("status", "DEGRADED");
         }
 

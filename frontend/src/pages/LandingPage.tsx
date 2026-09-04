@@ -7,15 +7,15 @@ import CTA from '../components/landing/CTA';
 import Footer from '../components/landing/Footer';
 
 export default function LandingPage() {
-  return (
-    <div className="min-h-screen bg-surface-0">
-      <LandingHeader />
-      <Hero />
-      <Features />
-      <HowItWorks />
-      <Stats />
-      <CTA />
-      <Footer />
-    </div>
-  );
+ return (
+  <div className="min-h-screen bg-surface-0">
+   <LandingHeader />
+   <Hero />
+   <Features />
+   <HowItWorks />
+   <Stats />
+   <CTA />
+   <Footer />
+  </div>
+ );
 }

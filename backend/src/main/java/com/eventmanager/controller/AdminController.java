@@ -30,6 +30,7 @@ public class AdminController {
     public ResponseEntity<ApiResponse<Page<UserResponse>>> listUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        size = Math.min(size, 50);
         Page<UserResponse> users = adminService.listUsers(
                 PageRequest.of(page, size, Sort.by("createdAt").descending()));
         return ResponseEntity.ok(ApiResponse.success(users));

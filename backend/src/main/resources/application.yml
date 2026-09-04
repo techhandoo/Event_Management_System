@@ -15,8 +15,10 @@ spring:
       maximum-pool-size: 20
       minimum-idle: 5
       idle-timeout: 300000
-      connection-timeout: 20000
-      max-lifetime: 1200000
+      connection-timeout: 5000
+      max-lifetime: 1800000
+      keepalive-time: 30000
+      validation-timeout: 3000
 
   # ─── JPA & Hibernate ─────────────────────────────────
   jpa:
@@ -95,6 +97,11 @@ app:
     resend-api-key: ${RESEND_API_KEY:re_placeholder}
     from-address: ${EMAIL_FROM:noreply@eventry.app}
     frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  security:
+    csp:
+      connect-src: "http://localhost:5173 http://localhost:3000 https://eventry-api.onrender.com https://api.razorpay.com"
+    cors:
+      allowed-origins: "http://localhost:5173,http://localhost:3000,https://event-management-system-five-mauve.vercel.app,https://eventry.vercel.app"
 
 # ─── Logging ────────────────────────────────────────────
 logging:
