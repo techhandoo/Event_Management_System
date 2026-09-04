@@ -211,7 +211,3 @@ Once the backend is running, visit:
 ## 📄 License
 
 MIT License — Built with ❤️ for portfolio showcase.
-
----
-
-**🤖 Generated with Codebuff**
