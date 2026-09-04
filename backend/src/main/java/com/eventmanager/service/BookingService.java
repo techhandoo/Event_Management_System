@@ -130,15 +130,15 @@ public class BookingService {
         eventRepository.save(event);
 
         booking.setStatus(BookingStatus.CANCELLED);
-        booking = bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(booking);
 
         BookingEvent kafkaEvent = BookingEvent.of(
-                booking.getId(), booking.getUser().getId(), booking.getUser().getEmail(),
+                savedBooking.getId(), savedBooking.getUser().getId(), savedBooking.getUser().getEmail(),
                 event.getId(), event.getTitle(),
-                booking.getQuantity(), booking.getTotalCents(), "CANCELLED"
+                savedBooking.getQuantity(), savedBooking.getTotalCents(), "CANCELLED"
         );
         if (bookingEventProducer != null) bookingEventProducer.sendBookingEvent(kafkaEvent);
 
-        return bookingMapper.toResponse(booking);
+        return bookingMapper.toResponse(savedBooking);
     }
 }
