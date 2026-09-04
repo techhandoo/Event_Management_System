@@ -3,7 +3,6 @@ package com.eventmanager.controller;
 import com.eventmanager.dto.response.ApiResponse;
 import com.eventmanager.model.Booking;
 import com.eventmanager.service.PaymentService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -14,9 +13,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@RestController
+/**
+ * Registered as a bean in {@link com.eventmanager.config.RazorpayConfig}
+ * only when Razorpay is configured. Not component-scanned.
+ */
 @RequestMapping("/api/payments")
-@ConditionalOnBean(PaymentService.class)
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -55,10 +56,8 @@ public class PaymentController {
             @RequestBody VerifyPaymentRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         Booking booking = paymentService.verifyPayment(
-                request.getRazorpayOrderId(),
-                request.getRazorpayPaymentId(),
-                request.getRazorpaySignature(),
-                userDetails.getUsername());
+                request.getRazorpayOrderId(), request.getRazorpayPaymentId(),
+                request.getRazorpaySignature(), userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success("Payment verified", booking));
     }
 }

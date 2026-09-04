@@ -15,9 +15,6 @@ import com.razorpay.RazorpayException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Mac;
@@ -27,8 +24,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-@Service
-@ConditionalOnBean(RazorpayClient.class)
 public class PaymentService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
@@ -37,21 +32,21 @@ public class PaymentService {
     private final BookingRepository bookingRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
-
-    @Value("${razorpay.key.id}")
-    private String razorpayKeyId;
-
-    @Value("${razorpay.key.secret}")
-    private String razorpayKeySecret;
+    private final String razorpayKeyId;
+    private final String razorpayKeySecret;
 
     public PaymentService(RazorpayClient razorpayClient,
                           BookingRepository bookingRepository,
                           EventRepository eventRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          String razorpayKeyId,
+                          String razorpayKeySecret) {
         this.razorpayClient = razorpayClient;
         this.bookingRepository = bookingRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.razorpayKeyId = razorpayKeyId;
+        this.razorpayKeySecret = razorpayKeySecret;
     }
 
     @Transactional
