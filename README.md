@@ -1,4 +1,4 @@
-# 🎫 FreeBuff — Event Management Platform
+# 🎫  Event Management Platform
 
 A full-stack event management platform built with **Spring Boot**, **React**, **Kafka**, and **PostgreSQL**. Users can register, authenticate, create and manage events, and handle event booking workflows with real-time notifications.
 
