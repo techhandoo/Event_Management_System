@@ -51,4 +51,13 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("SELECT COALESCE(SUM(e.priceCents * e.bookedCount), 0) FROM Event e WHERE e.organizer.id = :organizerId")
     long sumRevenueByOrganizerId(@Param("organizerId") Long organizerId);
+
+    /**
+     * Pessimistic row lock — SELECT ... FOR UPDATE (native SQL).
+     * JPQL does not support FOR UPDATE, so we use a native query.
+     * Holds a row-level lock on the events table until the transaction commits or rolls back.
+     * Used during booking/cancellation/payment to prevent race conditions on capacity.
+     */
+    @Query(value = "SELECT * FROM events WHERE id = :id FOR UPDATE", nativeQuery = true)
+    Optional<Event> findByIdForUpdate(@Param("id") Long id);
 }

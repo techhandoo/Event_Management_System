@@ -32,6 +32,7 @@ public class EventController {
             @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        size = Math.min(size, 50); // Cap at 50 to prevent memory exhaustion
         Page<EventResponse> events = eventService.listEvents(city, category,
                 PageRequest.of(page, size, Sort.by("startTime").ascending()));
         return ResponseEntity.ok(ApiResponse.success(events));
@@ -88,6 +89,7 @@ public class EventController {
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        size = Math.min(size, 50);
         Page<EventResponse> events = eventService.searchEvents(q,
                 PageRequest.of(page, size, Sort.by("startTime").ascending()));
         return ResponseEntity.ok(ApiResponse.success(events));

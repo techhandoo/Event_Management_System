@@ -3,7 +3,6 @@ package com.eventmanager.service;
 import com.eventmanager.dto.request.CreateBookingRequest;
 import com.eventmanager.dto.response.BookingResponse;
 import com.eventmanager.exception.DuplicateResourceException;
-import com.eventmanager.exception.InsufficientCapacityException;
 import com.eventmanager.exception.ResourceNotFoundException;
 import com.eventmanager.kafka.event.BookingEvent;
 import com.eventmanager.kafka.producer.BookingEventProducer;
@@ -48,31 +47,21 @@ public class BookingService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
 
-        Event event = eventRepository.findById(request.getEventId())
+        Event event = eventRepository.findByIdForUpdate(request.getEventId())
                 .orElseThrow(() -> new ResourceNotFoundException("Event", "id", request.getEventId()));
 
-        // Check event is published
-        if (event.getStatus() != com.eventmanager.model.enums.EventStatus.PUBLISHED) {
-            throw new IllegalArgumentException("Event is not available for booking");
-        }
+        int quantity = request.getQuantity() != null ? request.getQuantity() : 1;
+        event.validateForBooking(quantity);
 
-        // Check for existing active booking (prevents duplicate bookings)
+        // Check for existing active booking
         List<BookingStatus> activeStatuses = List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED);
         if (bookingRepository.existsByUserIdAndEventIdAndStatusIn(user.getId(), event.getId(), activeStatuses)) {
             throw new DuplicateResourceException("You already have an active booking for this event");
         }
 
-        // Check capacity with optimistic locking via @Version
-        int quantity = request.getQuantity() != null ? request.getQuantity() : 1;
-        if (!event.hasAvailableCapacity(quantity)) {
-            throw new InsufficientCapacityException(event.getAvailableCapacity(), quantity);
-        }
-
-        // Update event booked count
-        event.setBookedCount(event.getBookedCount() + quantity);
+        event.incrementBookedCount(quantity);
         eventRepository.save(event);
 
-        // Calculate total
         long totalCents = event.getPriceCents() * quantity;
 
         Booking booking = Booking.builder()
@@ -80,21 +69,15 @@ public class BookingService {
                 .event(event)
                 .quantity(quantity)
                 .totalCents(totalCents)
-                .status(BookingStatus.CONFIRMED) // Auto-confirm for MVP
+                .status(BookingStatus.CONFIRMED)
                 .build();
 
         booking = bookingRepository.save(booking);
 
-        // ── Kafka: publish booking.created event ──────────────────────
         BookingEvent kafkaEvent = BookingEvent.of(
-                booking.getId(),
-                user.getId(),
-                user.getEmail(),
-                event.getId(),
-                event.getTitle(),
-                quantity,
-                totalCents,
-                "CONFIRMED"
+                booking.getId(), user.getId(), user.getEmail(),
+                event.getId(), event.getTitle(),
+                quantity, totalCents, "CONFIRMED"
         );
         if (bookingEventProducer != null) bookingEventProducer.sendBookingEvent(kafkaEvent);
 
@@ -140,27 +123,22 @@ public class BookingService {
             throw new IllegalArgumentException("Booking is already cancelled or refunded");
         }
 
-        // Release capacity
-        Event event = booking.getEvent();
-        event.setBookedCount(Math.max(0, event.getBookedCount() - booking.getQuantity()));
+        Event event = eventRepository.findByIdForUpdate(booking.getEvent().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", booking.getEvent().getId()));
+
+        event.releaseCapacity(booking.getQuantity());
         eventRepository.save(event);
 
         booking.setStatus(BookingStatus.CANCELLED);
-        booking = bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(booking);
 
-        // ── Kafka: publish booking.cancelled event ─────────────────────
         BookingEvent kafkaEvent = BookingEvent.of(
-                booking.getId(),
-                booking.getUser().getId(),
-                booking.getUser().getEmail(),
-                event.getId(),
-                event.getTitle(),
-                booking.getQuantity(),
-                booking.getTotalCents(),
-                "CANCELLED"
+                savedBooking.getId(), savedBooking.getUser().getId(), savedBooking.getUser().getEmail(),
+                event.getId(), event.getTitle(),
+                savedBooking.getQuantity(), savedBooking.getTotalCents(), "CANCELLED"
         );
         if (bookingEventProducer != null) bookingEventProducer.sendBookingEvent(kafkaEvent);
 
-        return bookingMapper.toResponse(booking);
+        return bookingMapper.toResponse(savedBooking);
     }
 }

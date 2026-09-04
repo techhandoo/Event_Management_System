@@ -38,6 +38,7 @@ public class BookingController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        size = Math.min(size, 50);
         Page<BookingResponse> bookings = bookingService.getMyBookings(userDetails.getUsername(),
                 PageRequest.of(page, size, Sort.by("bookedAt").descending()));
         return ResponseEntity.ok(ApiResponse.success(bookings));

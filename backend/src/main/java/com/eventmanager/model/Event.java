@@ -82,12 +82,40 @@ public class Event {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Helper method
+    // ── Capacity helpers ─────────────────────────────────────
+
     public int getAvailableCapacity() {
         return capacity - bookedCount;
     }
 
     public boolean hasAvailableCapacity(int requestedQuantity) {
         return getAvailableCapacity() >= requestedQuantity;
+    }
+
+    /**
+     * Validate that this event can be booked: must be PUBLISHED and have capacity.
+     * Throws IllegalArgumentException if not publishable/available.
+     */
+    public void validateForBooking(int quantity) {
+        if (status != EventStatus.PUBLISHED) {
+            throw new IllegalArgumentException("Event is not available for booking");
+        }
+        if (!hasAvailableCapacity(quantity)) {
+            throw new com.eventmanager.exception.InsufficientCapacityException(getAvailableCapacity(), quantity);
+        }
+    }
+
+    /**
+     * Atomically increment booked count (must be called on a locked row).
+     */
+    public void incrementBookedCount(int quantity) {
+        this.bookedCount = this.bookedCount + quantity;
+    }
+
+    /**
+     * Atomically decrement booked count, floor at 0 (must be called on a locked row).
+     */
+    public void releaseCapacity(int quantity) {
+        this.bookedCount = Math.max(0, this.bookedCount - quantity);
     }
 }

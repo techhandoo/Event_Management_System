@@ -4,7 +4,6 @@ import com.eventmanager.dto.request.CreateBookingRequest;
 import com.eventmanager.dto.response.BookingResponse;
 import com.eventmanager.exception.DuplicateResourceException;
 import com.eventmanager.exception.InsufficientCapacityException;
-import com.eventmanager.exception.ResourceNotFoundException;
 import com.eventmanager.kafka.producer.BookingEventProducer;
 import com.eventmanager.mapper.BookingMapper;
 import com.eventmanager.model.Booking;
@@ -25,7 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,8 +64,6 @@ class BookingServiceTest {
                 .eventId(10L).quantity(2).build();
     }
 
-    // ── Create Booking ─────────────────────────────────────
-
     @Test
     void createBookingSuccess() {
         Booking booking = Booking.builder()
@@ -75,7 +71,7 @@ class BookingServiceTest {
                 .totalCents(10000L).status(BookingStatus.CONFIRMED).build();
 
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(event));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(event));
         when(bookingRepository.existsByUserIdAndEventIdAndStatusIn(eq(1L), eq(10L), anyList())).thenReturn(false);
         when(eventRepository.save(any(Event.class))).thenReturn(event);
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
@@ -86,14 +82,14 @@ class BookingServiceTest {
 
         assertNotNull(response);
         assertEquals(BookingStatus.CONFIRMED, response.getStatus());
-        assertEquals(12, event.getBookedCount()); // 10 + 2
+        assertEquals(12, event.getBookedCount());
         verify(bookingEventProducer).sendBookingEvent(any());
     }
 
     @Test
     void createBookingDuplicateThrows() {
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(event));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(event));
         when(bookingRepository.existsByUserIdAndEventIdAndStatusIn(eq(1L), eq(10L), anyList())).thenReturn(true);
 
         assertThrows(DuplicateResourceException.class,
@@ -103,10 +99,9 @@ class BookingServiceTest {
     @Test
     void createBookingInsufficientCapacityThrows() {
         event.setCapacity(15);
-        event.setBookedCount(14); // only 1 left, but booking 2
+        event.setBookedCount(14);
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(event));
-        when(bookingRepository.existsByUserIdAndEventIdAndStatusIn(eq(1L), eq(10L), anyList())).thenReturn(false);
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(event));
 
         assertThrows(InsufficientCapacityException.class,
                 () -> bookingService.createBooking(bookingRequest, "user@example.com"));
@@ -116,13 +111,11 @@ class BookingServiceTest {
     void createBookingEventNotPublishedThrows() {
         event.setStatus(EventStatus.DRAFT);
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
-        when(eventRepository.findById(10L)).thenReturn(Optional.of(event));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(event));
 
         assertThrows(IllegalArgumentException.class,
                 () -> bookingService.createBooking(bookingRequest, "user@example.com"));
     }
-
-    // ── Cancel Booking ─────────────────────────────────────
 
     @Test
     void cancelBookingSuccess() {
@@ -133,6 +126,7 @@ class BookingServiceTest {
 
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(event));
         when(eventRepository.save(any(Event.class))).thenReturn(event);
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
         when(bookingMapper.toResponse(any(Booking.class))).thenReturn(
@@ -141,7 +135,7 @@ class BookingServiceTest {
         BookingResponse response = bookingService.cancelBooking(1L, "user@example.com");
 
         assertEquals(BookingStatus.CANCELLED, response.getStatus());
-        assertEquals(48, event.getBookedCount()); // 50 - 2
+        assertEquals(48, event.getBookedCount());
         verify(bookingEventProducer).sendBookingEvent(any());
     }
 

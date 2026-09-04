@@ -3,15 +3,15 @@ import DashboardLayout from './DashboardLayout';
 import EventDetailPage from '../pages/EventDetailPage';
 
 export default function EventDetailPageWrapper() {
-  const { isAuthenticated } = useAuth();
+ const { isAuthenticated } = useAuth();
 
-  if (isAuthenticated) {
-    return (
-      <DashboardLayout>
-        <EventDetailPage />
-      </DashboardLayout>
-    );
-  }
+ if (isAuthenticated) {
+  return (
+   <DashboardLayout>
+    <EventDetailPage />
+   </DashboardLayout>
+  );
+ }
 
-  return <EventDetailPage />;
+ return <EventDetailPage />;
 }

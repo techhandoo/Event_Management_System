@@ -1,28 +1,49 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const api = axios.create({
   baseURL: 'https://eventry-api.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 120000, // 2 min for cold starts
 });
 
-// Request interceptor: attach JWT token
+// Cold-start indicator: show "Waking up" toast if request takes >5s
+let coldStartToastId: string | null = null;
+let pendingRequests = 0;
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    pendingRequests++;
+    if (pendingRequests === 1) {
+      coldStartToastId = toast.loading('Waking up server... this may take a moment', { duration: 60000 });
+    }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: handle 401 and token refresh
+// Response interceptor: dismiss cold-start toast + handle 401 and token refresh
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    pendingRequests = Math.max(0, pendingRequests - 1);
+    if (pendingRequests === 0 && coldStartToastId) {
+      toast.dismiss(coldStartToastId);
+      coldStartToastId = null;
+    }
+    return response;
+  },
   async (error) => {
+    pendingRequests = Math.max(0, pendingRequests - 1);
+    if (pendingRequests === 0 && coldStartToastId) {
+      toast.dismiss(coldStartToastId);
+      coldStartToastId = null;
+    }
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
