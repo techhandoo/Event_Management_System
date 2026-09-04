@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 @ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Disabled("Requires Docker for Testcontainers — run locally with docker-compose up")
 class EventBookingIntegrationTest {
 
     @Container
