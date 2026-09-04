@@ -57,6 +57,12 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .headers(headers -> headers
                 .frameOptions(frame -> frame.deny())
+                .contentTypeOptions(Customizer.withDefaults())
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .maxAgeInSeconds(63072000)
+                    .includeSubDomains(true)
+                    .preload(true)
+                )
                 .contentSecurityPolicy(csp -> csp.policyDirectives(
                     "default-src 'self'; " +
                     "script-src 'self'; " +
@@ -70,6 +76,7 @@ public class SecurityConfig {
                 .permissionsPolicy(permissions -> permissions.policy(
                     "camera=(), microphone=(), geolocation=(), payment=(self)"
                 ))
+                .httpCache(Customizer.withDefaults())
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz

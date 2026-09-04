@@ -102,7 +102,6 @@ class BookingServiceTest {
         event.setBookedCount(14);
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(event));
-        when(bookingRepository.existsByUserIdAndEventIdAndStatusIn(eq(1L), eq(10L), anyList())).thenReturn(false);
 
         assertThrows(InsufficientCapacityException.class,
                 () -> bookingService.createBooking(bookingRequest, "user@example.com"));
