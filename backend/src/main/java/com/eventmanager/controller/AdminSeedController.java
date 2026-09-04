@@ -84,6 +84,11 @@ public class AdminSeedController {
                     .body(ApiResponse.error("email, password, and fullName are required"));
         }
 
+        if (password.length() < 8) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Password must be at least 8 characters"));
+        }
+
         if (userRepository.existsByEmail(email)) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ApiResponse.error("Email already registered"));

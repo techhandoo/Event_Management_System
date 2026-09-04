@@ -77,8 +77,7 @@ public class SecurityConfig {
                 "http://localhost:5173",
                 "http://localhost:3000",
                 "https://event-management-system-five-mauve.vercel.app",
-                "https://eventry.vercel.app",
-                "*"
+                "https://eventry.vercel.app"
         ));
         config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(java.util.List.of("*"));

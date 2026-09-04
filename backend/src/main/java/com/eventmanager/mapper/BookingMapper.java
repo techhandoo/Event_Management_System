@@ -18,6 +18,10 @@ public class BookingMapper {
                 .quantity(booking.getQuantity())
                 .totalCents(booking.getTotalCents())
                 .status(booking.getStatus())
+                .paymentId(booking.getPaymentId())
+                .razorpayOrderId(booking.getRazorpayOrderId())
+                .paymentMethod(booking.getPaymentMethod())
+                .paidAt(booking.getPaidAt())
                 .bookedAt(booking.getBookedAt())
                 .build();
     }

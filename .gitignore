@@ -5,6 +5,10 @@
 *.swp
 *.swo
 *~
+out/
+.project
+.classpath
+.settings/
 
 # ─── Java / Maven ──────────────────────────────────────
 target/
@@ -12,16 +16,18 @@ target/
 *.jar
 *.war
 *.ear
+backend/.mvn/wrapper/maven-wrapper.jar
 
 # ─── Node / React ──────────────────────────────────────
 node_modules/
 build/
 dist/
+frontend/.vite/
+
+# ─── Environment ───────────────────────────────────────
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # ─── Docker ────────────────────────────────────────────
 .docker/
@@ -33,6 +39,20 @@ Thumbs.db
 # ─── Logs ──────────────────────────────────────────────
 *.log
 logs/
+
+# ─── Test reports & dumps ──────────────────────────────
+surefire-reports/
+*.hprof
+*.dump
+dumpstream
+hs_err_pid*
+
+# ─── Process IDs ───────────────────────────────────────
+*.pid
+
+# ─── Caches ────────────────────────────────────────────
+.turbo/
+.cache/
 
 # ─── Freebuff ──────────────────────────────────────────
 .freebuff/
@@ -49,7 +69,6 @@ frontend/preview.html
 *.orig
 *.sql.bak
 
-# ─── Environment at root ──────────────────────────────
-.env.*
+# ─── Vercel / Deployment ──────────────────────────────
 !vercel.json
 !docker-compose.yml

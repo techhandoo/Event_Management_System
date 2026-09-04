@@ -79,6 +79,11 @@ spring:
     default-property-inclusion: non_null
 
 # ─── Application Properties ─────────────────────────────
+# ─── Razorpay ─────────────────────────────────────────
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
+  key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
+
 app:
   jwt:
     secret: ${JWT_SECRET:}

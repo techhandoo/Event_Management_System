@@ -65,6 +65,10 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID}
+  key-secret: ${RAZORPAY_KEY_SECRET}
+
 app:
   jwt:
     secret: ${JWT_SECRET}

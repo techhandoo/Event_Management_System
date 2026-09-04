@@ -49,6 +49,7 @@ export default function MyBookingsPage() {
                   <th className="px-6 hidden sm:table-cell">Date</th>
                   <th className="px-6">Qty</th>
                   <th className="px-6">Total</th>
+                  <th className="px-6 hidden md:table-cell">Payment</th>
                   <th className="px-6">Status</th>
                   <th className="px-6 text-right">Action</th>
                 </tr>
@@ -67,6 +68,9 @@ export default function MyBookingsPage() {
                     <td className="px-6 text-sm text-surface-600">{b.quantity}</td>
                     <td className="px-6 text-sm font-semibold text-surface-800">
                       {b.totalCents === 0 ? 'Free' : `$${(b.totalCents / 100).toFixed(2)}`}
+                    </td>
+                    <td className="px-6 text-xs text-surface-400 hidden md:table-cell">
+                      {b.totalCents === 0 ? '—' : (b as any).paymentId ? <span className="text-emerald-500">Paid</span> : <span className="text-amber-500">Pending</span>}
                     </td>
                     <td className="px-6"><StatusBadge status={b.status} /></td>
                     <td className="px-6 text-right">

@@ -45,7 +45,7 @@ public class AdminService {
         long totalOrganizers = userRepository.countByRole(Role.ORGANIZER);
         long totalAttendees = userRepository.countByRole(Role.ATTENDEE);
         long totalEvents = eventRepository.count();
-        long publishedEvents = eventRepository.countByOrganizerIdAndStatus(null, EventStatus.PUBLISHED);
+        long publishedEvents = eventRepository.countByStatus(EventStatus.PUBLISHED);
         long totalBookings = bookingRepository.countAll();
         long totalRevenue = bookingRepository.sumAllRevenue();
 
@@ -72,6 +72,11 @@ public class AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
+        // Prevent admin from demoting themselves
+        if (user.getId().equals(admin.getId())) {
+            throw new IllegalArgumentException("You cannot change your own role");
+        }
+
         Role newRole = Role.valueOf(roleStr.toUpperCase());
         user.setRole(newRole);
         user = userRepository.save(user);
@@ -89,6 +94,11 @@ public class AdminService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        // Prevent admin from banning themselves
+        if (user.getId().equals(admin.getId())) {
+            throw new IllegalArgumentException("You cannot ban yourself");
+        }
 
         user.setIsActive(!user.getIsActive());
         user = userRepository.save(user);

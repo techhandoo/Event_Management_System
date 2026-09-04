@@ -6,7 +6,6 @@ import { Event, ApiResponse } from '../types';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { MapPin, Users, ArrowLeft, Ticket, Calendar, Share2, Heart } from 'lucide-react';
-import DashboardLayout from '../components/DashboardLayout';
 import { PageLoader } from '../components/ui';
 
 export default function EventDetailPage() {
@@ -29,12 +28,68 @@ export default function EventDetailPage() {
   const handleBook = async () => {
     if (!isAuthenticated) { toast.error('Please sign in to book'); navigate('/login'); return; }
     setBooking(true);
-    try { await api.post('/bookings', { eventId: Number(id), quantity }); toast.success('Booking confirmed'); navigate('/my-bookings'); }
-    catch (err: any) { toast.error(err.response?.data?.message || 'Booking failed'); }
-    finally { setBooking(false); }
+    try {
+      if (event!.priceCents === 0) {
+        // Free event — book directly
+        await api.post('/bookings', { eventId: Number(id), quantity });
+        toast.success('Booking confirmed!');
+        navigate('/my-bookings');
+      } else {
+        // Paid event — create Razorpay order
+        const orderRes = await api.post('/payments/create-order', { eventId: Number(id), quantity });
+        const orderData = orderRes.data.data;
+        openRazorpayCheckout(orderData);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Booking failed');
+    } finally {
+      setBooking(false);
+    }
   };
 
-  if (loading) return <DashboardLayout><PageLoader /></DashboardLayout>;
+  const openRazorpayCheckout = (orderData: any) => {
+    const options = {
+      key: orderData.keyId,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      name: 'Eventry',
+      description: `Booking: ${orderData.eventName}`,
+      order_id: orderData.orderId,
+      handler: async function (response: any) {
+        // Payment successful — verify on backend
+        try {
+          await api.post('/payments/verify', {
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+          });
+          toast.success('Payment successful! Booking confirmed.');
+          navigate('/my-bookings');
+        } catch (err: any) {
+          toast.error('Payment was received but confirmation failed. Contact support.');
+          navigate('/my-bookings');
+        }
+      },
+      prefill: {
+        name: '',
+        email: '',
+      },
+      theme: {
+        color: '#6366f1',
+      },
+      modal: {
+        ondismiss: function () {
+          toast.error('Payment cancelled');
+          setBooking(false);
+        },
+      },
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
+  };
+
+  if (loading) return <PageLoader />;
   if (!event) return null;
 
   const fmt = (c: number) => c === 0 ? 'Free' : `$${(c / 100).toFixed(2)}`;
@@ -42,7 +97,6 @@ export default function EventDetailPage() {
   const capacityPct = event.capacity > 0 ? Math.round(((event.capacity - event.availableCapacity) / event.capacity) * 100) : 0;
 
   return (
-    <DashboardLayout>
       <div className="max-w-4xl mx-auto page-enter">
         <button onClick={() => navigate('/events')} className="btn-ghost text-sm mb-4 -ml-2 group">
           <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" /> Back to events
@@ -153,7 +207,6 @@ export default function EventDetailPage() {
           </div>
         </motion.div>
       </div>
-    </DashboardLayout>
   );
 }
 

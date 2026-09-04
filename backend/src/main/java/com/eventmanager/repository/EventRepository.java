@@ -45,6 +45,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     long countByOrganizerIdAndStatus(Long organizerId, EventStatus status);
 
+    long countByStatus(EventStatus status);
+
     long countByOrganizerId(Long organizerId);
 
     @Query("SELECT COALESCE(SUM(e.priceCents * e.bookedCount), 0) FROM Event e WHERE e.organizer.id = :organizerId")

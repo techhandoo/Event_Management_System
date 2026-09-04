@@ -22,5 +22,9 @@ public class BookingResponse {
     private Integer quantity;
     private Long totalCents;
     private BookingStatus status;
+    private String paymentId;
+    private String razorpayOrderId;
+    private String paymentMethod;
+    private LocalDateTime paidAt;
     private LocalDateTime bookedAt;
 }
