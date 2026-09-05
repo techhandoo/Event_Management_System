@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class PaymentService {
 
@@ -59,15 +60,37 @@ public class PaymentService {
 
         event.validateForBooking(quantity);
 
-        // Prevent duplicate active bookings
-        List<BookingStatus> activeStatuses = List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED);
-        if (bookingRepository.existsByUserIdAndEventIdAndStatusIn(user.getId(), event.getId(), activeStatuses)) {
-            throw new DuplicateResourceException("You already have an active booking for this event");
-        }
-
         long totalCents = event.getPriceCents() * quantity;
         if (totalCents <= 0) {
             throw new IllegalArgumentException("Free events do not require payment");
+        }
+
+        // Check for existing booking (DB unique constraint on user_id + event_id)
+        Optional<Booking> existingBooking = bookingRepository.findByUserIdAndEventId(user.getId(), event.getId());
+        Booking booking;
+
+        if (existingBooking.isPresent()) {
+            Booking existing = existingBooking.get();
+            if (existing.getStatus() == BookingStatus.CANCELLED || existing.getStatus() == BookingStatus.REFUNDED) {
+                // Re-activate the cancelled booking
+                existing.setStatus(BookingStatus.PENDING);
+                existing.setQuantity(quantity);
+                existing.setTotalCents(totalCents);
+                existing.setRazorpayOrderId(null);
+                existing.setPaymentId(null);
+                existing.setPaidAt(null);
+                booking = existing;
+            } else {
+                throw new DuplicateResourceException("You already have an active booking for this event");
+            }
+        } else {
+            booking = Booking.builder()
+                    .user(user)
+                    .event(event)
+                    .quantity(quantity)
+                    .totalCents(totalCents)
+                    .status(BookingStatus.PENDING)
+                    .build();
         }
 
         try {
@@ -84,15 +107,7 @@ public class PaymentService {
             Order order = razorpayClient.orders.create(orderRequest);
             String orderId = order.get("id");
 
-            // Create a PENDING booking so verifyPayment can find it later
-            Booking booking = Booking.builder()
-                    .user(user)
-                    .event(event)
-                    .quantity(quantity)
-                    .totalCents(totalCents)
-                    .status(BookingStatus.PENDING)
-                    .razorpayOrderId(orderId)
-                    .build();
+            booking.setRazorpayOrderId(orderId);
             bookingRepository.save(booking);
 
             return Map.of(
@@ -104,6 +119,9 @@ public class PaymentService {
                     "quantity", quantity
             );
         } catch (RazorpayException e) {
+            if (existingBooking.isPresent()) {
+                booking.setStatus(BookingStatus.CANCELLED);
+            }
             throw new RuntimeException("Failed to create payment order: " + e.getMessage(), e);
         }
     }
