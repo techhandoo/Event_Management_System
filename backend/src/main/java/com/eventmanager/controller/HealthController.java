@@ -27,6 +27,7 @@ public class HealthController {
 
     private final DataSource dataSource;
     private final String kafkaBootstrapServers;
+    private final boolean kafkaEnabled;
     @Autowired(required = false)
     private StringRedisTemplate redisTemplate;
 
@@ -34,6 +35,7 @@ public class HealthController {
                             @Value("${spring.kafka.bootstrap-servers:localhost:9092}") String kafkaBootstrapServers) {
         this.dataSource = dataSource;
         this.kafkaBootstrapServers = kafkaBootstrapServers;
+        this.kafkaEnabled = kafkaBootstrapServers != null && !kafkaBootstrapServers.isBlank();
     }
 
     /**
@@ -82,19 +84,23 @@ public class HealthController {
             dependencies.put("redis", "DISABLED");
         }
 
-        // Check Kafka via AdminClient — hide error details
-        try {
-            Properties props = new Properties();
-            props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
-            try (AdminClient adminClient = AdminClient.create(props)) {
-                ListTopicsResult topics = adminClient.listTopics();
-                Set<String> names = topics.names().get();
-                dependencies.put("kafka", "UP (" + names.size() + " topics)");
+        // Check Kafka via AdminClient — skip if Kafka is not configured
+        if (kafkaEnabled) {
+            try {
+                Properties props = new Properties();
+                props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
+                try (AdminClient adminClient = AdminClient.create(props)) {
+                    ListTopicsResult topics = adminClient.listTopics();
+                    Set<String> names = topics.names().get();
+                    dependencies.put("kafka", "UP (" + names.size() + " topics)");
+                }
+            } catch (Exception e) {
+                log.warn("Health check: kafka DOWN - {}", e.getMessage());
+                dependencies.put("kafka", "DOWN");
+                health.put("status", "DEGRADED");
             }
-        } catch (Exception e) {
-            log.warn("Health check: kafka DOWN - {}", e.getMessage());
-            dependencies.put("kafka", "DOWN");
-            health.put("status", "DEGRADED");
+        } else {
+            dependencies.put("kafka", "DISABLED");
         }
 
         health.put("dependencies", dependencies);

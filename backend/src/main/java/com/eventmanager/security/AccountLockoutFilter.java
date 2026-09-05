@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -101,7 +102,7 @@ public class AccountLockoutFilter extends OncePerRequestFilter {
     private String extractEmailFromBody(CachedBodyRequest cached) {
         try {
             byte[] body = cached.getCachedBody();
-            String bodyStr = new String(body);
+            String bodyStr = new String(body, StandardCharsets.UTF_8);
 
             int emailIdx = bodyStr.indexOf("\"email\"");
             if (emailIdx < 0) return null;
