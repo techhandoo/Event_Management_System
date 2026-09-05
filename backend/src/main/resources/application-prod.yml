@@ -3,6 +3,10 @@
 # ═══════════════════════════════════════════════════════════════
 
 spring:
+  main:
+    lazy-initialization: false
+    allow-circular-references: false
+
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
@@ -22,6 +26,9 @@ spring:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springdoc.core.SwaggerUiConfigParameters
+      - org.springdoc.core.SwaggerUiWebMvcConfigurer
+      - org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 
   jpa:
     open-in-view: false
@@ -49,7 +56,7 @@ spring:
       group-id: eventry-prod-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.JsonDeserializer
       properties:
         spring.json.trusted.packages: "com.eventmanager.kafka.event"
         spring.json.add.type.headers: false

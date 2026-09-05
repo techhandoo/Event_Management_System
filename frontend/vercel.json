@@ -15,7 +15,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://eventry-api.onrender.com https://api.razorpay.com; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self' https://checkout.razorpay.com https://*.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://eventry-api.onrender.com https://api.razorpay.com; frame-ancestors 'none'; frame-src https://*.razorpay.com"
         },
         {
           "key": "X-Frame-Options",
