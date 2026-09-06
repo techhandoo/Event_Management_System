@@ -213,12 +213,14 @@ public class EventService {
         long draftEvents = eventRepository.countByOrganizerIdAndStatus(organizer.getId(), EventStatus.DRAFT);
         long totalRevenue = eventRepository.sumRevenueByOrganizerId(organizer.getId());
         long totalBookings = bookingRepository.countConfirmedByOrganizerId(organizer.getId());
+        long totalAttendees = bookingRepository.countDistinctAttendeesByOrganizerId(organizer.getId());
 
         return OrganizerStatsResponse.builder()
                 .totalEvents(totalEvents)
                 .publishedEvents(publishedEvents)
                 .draftEvents(draftEvents)
                 .totalBookings(totalBookings)
+                .totalAttendees(totalAttendees)
                 .totalRevenueCents(totalRevenue)
                 .build();
     }

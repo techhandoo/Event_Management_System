@@ -10,6 +10,7 @@ import com.eventmanager.model.Event;
 import com.eventmanager.model.User;
 import com.eventmanager.model.enums.EventStatus;
 import com.eventmanager.model.enums.Role;
+import com.eventmanager.repository.BookingRepository;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +38,7 @@ class EventServiceTest {
 
     @Mock private EventRepository eventRepository;
     @Mock private UserRepository userRepository;
+    @Mock private BookingRepository bookingRepository;
     @Mock private EventMapper eventMapper;
     @Mock private EventEventProducer eventEventProducer;
 

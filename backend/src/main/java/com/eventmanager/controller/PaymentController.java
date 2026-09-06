@@ -1,7 +1,8 @@
 package com.eventmanager.controller;
 
 import com.eventmanager.dto.response.ApiResponse;
-import com.eventmanager.model.Booking;
+import com.eventmanager.dto.response.BookingResponse;
+import com.eventmanager.mapper.BookingMapper;
 import com.eventmanager.service.PaymentService;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -21,9 +22,11 @@ import java.util.Map;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final BookingMapper bookingMapper;
 
-    public PaymentController(PaymentService paymentService) {
+    public PaymentController(PaymentService paymentService, BookingMapper bookingMapper) {
         this.paymentService = paymentService;
+        this.bookingMapper = bookingMapper;
     }
 
     @Data
@@ -52,12 +55,13 @@ public class PaymentController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<ApiResponse<Booking>> verifyPayment(
+    public ResponseEntity<ApiResponse<BookingResponse>> verifyPayment(
             @RequestBody VerifyPaymentRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        Booking booking = paymentService.verifyPayment(
+        var booking = paymentService.verifyPayment(
                 request.getRazorpayOrderId(), request.getRazorpayPaymentId(),
                 request.getRazorpaySignature(), userDetails.getUsername());
-        return ResponseEntity.ok(ApiResponse.success("Payment verified", booking));
+        return ResponseEntity.ok(ApiResponse.success("Payment verified",
+                bookingMapper.toResponse(booking)));
     }
 }

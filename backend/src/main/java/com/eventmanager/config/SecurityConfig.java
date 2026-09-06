@@ -20,7 +20,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import jakarta.servlet.Filter;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -117,24 +116,19 @@ public class SecurityConfig {
      * causing them to run outside the Spring Security chain.
      */
     @Bean
-    public FilterRegistrationBean<Filter> disableAutoRegistration(JwtAuthenticationFilter f) {
-        FilterRegistrationBean<Filter> bean = new FilterRegistrationBean<>(f);
-        bean.setEnabled(false);
-        return bean;
-    }
-
-    @Bean
-    public FilterRegistrationBean<Filter> disableAutoRegistration2(RateLimitFilter f) {
-        FilterRegistrationBean<Filter> bean = new FilterRegistrationBean<>(f);
-        bean.setEnabled(false);
-        return bean;
-    }
-
-    @Bean
-    public FilterRegistrationBean<Filter> disableAutoRegistration3(AccountLockoutFilter f) {
-        FilterRegistrationBean<Filter> bean = new FilterRegistrationBean<>(f);
-        bean.setEnabled(false);
-        return bean;
+    public FilterRegistrationBean<Filter>[] disableFilterAutoRegistration(
+            JwtAuthenticationFilter jwt,
+            RateLimitFilter rateLimit,
+            AccountLockoutFilter lockout) {
+        @SuppressWarnings("unchecked")
+        FilterRegistrationBean<Filter>[] beans = new FilterRegistrationBean[3];
+        int i = 0;
+        for (Filter filter : new Filter[]{jwt, rateLimit, lockout}) {
+            FilterRegistrationBean<Filter> bean = new FilterRegistrationBean<>(filter);
+            bean.setEnabled(false);
+            beans[i++] = bean;
+        }
+        return beans;
     }
 
     @Bean
