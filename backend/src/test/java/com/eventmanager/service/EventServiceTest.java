@@ -75,8 +75,7 @@ class EventServiceTest {
 
         // InputSanitizer passes through by default — only needed for create/update
         when(inputSanitizer.sanitize(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(inputSanitizer.sanitizeRich(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(userRepository.findByEmail("org@example.com")).thenReturn(Optional.of(organizer));
+        when(userRepository.findByEmail("org@example.com").thenReturn(Optional.of(organizer));
         when(eventRepository.save(any(Event.class))).thenReturn(event);
         when(eventMapper.toResponse(any(Event.class))).thenReturn(
                 EventResponse.builder().id(10L).title("Test Event").build());
