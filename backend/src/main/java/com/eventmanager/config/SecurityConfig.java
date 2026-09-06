@@ -68,10 +68,12 @@ public class SecurityConfig {
             // the X-XSRF-TOKEN header on state-changing requests.
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers(
-                    "/api/auth/login",    // Login has no CSRF token yet
-                    "/api/auth/register", // Registration has no CSRF token yet
-                    "/api/auth/refresh",  // Refresh uses cookie, not form
-                    "/api/webhooks/**"    // Razorpay webhooks
+                    "/api/auth/login",      // Login has no CSRF token yet
+                    "/api/auth/register",   // Registration has no CSRF token yet
+                    "/api/auth/refresh",    // Refresh uses cookie, not form
+                    "/api/auth/logout",     // Logout uses raw axios, no CSRF token
+                    "/api/auth/seed-admin", // One-time setup, no CSRF token on first visit
+                    "/api/webhooks/**"      // Razorpay webhooks
                 )
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
             )
