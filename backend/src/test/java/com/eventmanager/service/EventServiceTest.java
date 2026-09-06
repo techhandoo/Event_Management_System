@@ -52,9 +52,6 @@ class EventServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(eventService, "eventEventProducer", eventEventProducer);
-        // InputSanitizer passes through by default
-        when(inputSanitizer.sanitize(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(inputSanitizer.sanitizeRich(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         organizer = User.builder()
                 .id(1L).email("org@example.com").fullName("Org User").role(Role.ORGANIZER).isActive(true).build();
@@ -76,6 +73,9 @@ class EventServiceTest {
                 .endTime(LocalDateTime.now().plusDays(8))
                 .capacity(100).priceCents(5000L).build();
 
+        // InputSanitizer passes through by default — only needed for create/update
+        when(inputSanitizer.sanitize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(inputSanitizer.sanitizeRich(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(userRepository.findByEmail("org@example.com")).thenReturn(Optional.of(organizer));
         when(eventRepository.save(any(Event.class))).thenReturn(event);
         when(eventMapper.toResponse(any(Event.class))).thenReturn(
