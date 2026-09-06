@@ -36,6 +36,11 @@ export default function EventDetailPage() {
     navigate('/my-bookings');
    } else {
     // Paid event — create Razorpay order
+    if (!(window as any).Razorpay) {
+     toast.error('Payment system is loading. Please try again in a moment.');
+     setBooking(false);
+     return;
+    }
     const orderRes = await api.post('/payments/create-order', { eventId: Number(id), quantity });
     const orderData = orderRes.data.data;
     openRazorpayCheckout(orderData);

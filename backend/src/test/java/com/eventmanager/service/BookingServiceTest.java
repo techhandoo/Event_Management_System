@@ -50,10 +50,12 @@ class BookingServiceTest {
         ReflectionTestUtils.setField(bookingService, "bookingEventProducer", bookingEventProducer);
 
         user = User.builder()
-                .id(1L).email("user@example.com").fullName("User").role(Role.ATTENDEE).isActive(true).build();
+                .id(1L).email("user@example.com").fullName("User")
+                .role(Role.ATTENDEE).isActive(true).build();
 
         event = Event.builder()
-                .id(10L).organizer(User.builder().id(2L).role(Role.ORGANIZER).build())
+                .id(10L)
+                .organizer(User.builder().id(2L).role(Role.ORGANIZER).build())
                 .title("Test Event").venue("Venue").city("City")
                 .startTime(LocalDateTime.now().plusDays(7))
                 .endTime(LocalDateTime.now().plusDays(8))
@@ -72,7 +74,7 @@ class BookingServiceTest {
 
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(event));
-        when(bookingRepository.existsByUserIdAndEventIdAndStatusIn(eq(1L), eq(10L), anyList())).thenReturn(false);
+        when(bookingRepository.findByUserIdAndEventId(1L, 10L)).thenReturn(Optional.empty());
         when(eventRepository.save(any(Event.class))).thenReturn(event);
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
         when(bookingMapper.toResponse(any(Booking.class))).thenReturn(
@@ -88,12 +90,39 @@ class BookingServiceTest {
 
     @Test
     void createBookingDuplicateThrows() {
+        Booking existing = Booking.builder()
+                .id(1L).user(user).event(event).status(BookingStatus.CONFIRMED).build();
+
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(event));
-        when(bookingRepository.existsByUserIdAndEventIdAndStatusIn(eq(1L), eq(10L), anyList())).thenReturn(true);
+        when(bookingRepository.findByUserIdAndEventId(1L, 10L))
+                .thenReturn(Optional.of(existing));
 
         assertThrows(DuplicateResourceException.class,
                 () -> bookingService.createBooking(bookingRequest, "user@example.com"));
+    }
+
+    @Test
+    void createBookingReactivatesCancelledBooking() {
+        Booking cancelled = Booking.builder()
+                .id(1L).user(user).event(event).status(BookingStatus.CANCELLED).build();
+        Booking saved = Booking.builder()
+                .id(1L).user(user).event(event).quantity(2)
+                .totalCents(10000L).status(BookingStatus.CONFIRMED).build();
+
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(eventRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(event));
+        when(bookingRepository.findByUserIdAndEventId(1L, 10L))
+                .thenReturn(Optional.of(cancelled));
+        when(eventRepository.save(any(Event.class))).thenReturn(event);
+        when(bookingRepository.save(any(Booking.class))).thenReturn(saved);
+        when(bookingMapper.toResponse(any(Booking.class))).thenReturn(
+                BookingResponse.builder().id(1L).status(BookingStatus.CONFIRMED).build());
+
+        BookingResponse response = bookingService.createBooking(bookingRequest, "user@example.com");
+
+        assertEquals(BookingStatus.CONFIRMED, response.getStatus());
+        verify(bookingEventProducer).sendBookingEvent(any());
     }
 
     @Test

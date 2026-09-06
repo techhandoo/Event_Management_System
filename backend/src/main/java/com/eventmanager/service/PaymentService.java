@@ -1,10 +1,8 @@
 package com.eventmanager.service;
 
-import com.eventmanager.exception.DuplicateResourceException;
 import com.eventmanager.exception.ResourceNotFoundException;
 import com.eventmanager.model.Booking;
 import com.eventmanager.model.Event;
-import com.eventmanager.model.User;
 import com.eventmanager.model.enums.BookingStatus;
 import com.eventmanager.repository.BookingRepository;
 import com.eventmanager.repository.EventRepository;
@@ -15,13 +13,13 @@ import com.razorpay.RazorpayException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.CacheManager;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 public class PaymentService {
@@ -32,6 +30,8 @@ public class PaymentService {
     private final BookingRepository bookingRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final BookingService bookingService;
+    private final CacheManager cacheManager;
     private final String razorpayKeyId;
     private final String razorpayKeySecret;
 
@@ -39,60 +39,49 @@ public class PaymentService {
                           BookingRepository bookingRepository,
                           EventRepository eventRepository,
                           UserRepository userRepository,
+                          BookingService bookingService,
+                          CacheManager cacheManager,
                           String razorpayKeyId,
                           String razorpayKeySecret) {
         this.razorpayClient = razorpayClient;
         this.bookingRepository = bookingRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.bookingService = bookingService;
+        this.cacheManager = cacheManager;
         this.razorpayKeyId = razorpayKeyId;
         this.razorpayKeySecret = razorpayKeySecret;
     }
 
     @Transactional
     public Map<String, Object> createOrder(Long eventId, int quantity, String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
+        // Shared validation: user lookup, event lock, capacity check, duplicate check
+        Booking booking = bookingService.prepareBooking(eventId, quantity, userEmail,
+                BookingStatus.PENDING);
 
-        Event event = eventRepository.findByIdForUpdate(eventId)
-                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", eventId));
-
-        event.validateForBooking(quantity);
-
-        // Prevent duplicate active bookings
-        List<BookingStatus> activeStatuses = List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED);
-        if (bookingRepository.existsByUserIdAndEventIdAndStatusIn(user.getId(), event.getId(), activeStatuses)) {
-            throw new DuplicateResourceException("You already have an active booking for this event");
-        }
-
-        long totalCents = event.getPriceCents() * quantity;
+        long totalCents = booking.getTotalCents();
         if (totalCents <= 0) {
             throw new IllegalArgumentException("Free events do not require payment");
         }
+
+        // Save the PENDING booking before calling Razorpay (so verifyPayment can find it)
+        booking = bookingRepository.save(booking);
 
         try {
             JSONObject orderRequest = new JSONObject();
             orderRequest.put("amount", totalCents);
             orderRequest.put("currency", "INR");
-            orderRequest.put("receipt", "evt_" + eventId + "_usr_" + user.getId());
+            orderRequest.put("receipt", "evt_" + eventId + "_usr_" + booking.getUser().getId());
             orderRequest.put("notes", Map.of(
                     "eventId", String.valueOf(eventId),
-                    "userId", String.valueOf(user.getId()),
-                    "eventTitle", event.getTitle()
+                    "userId", String.valueOf(booking.getUser().getId()),
+                    "eventTitle", booking.getEvent().getTitle()
             ));
 
             Order order = razorpayClient.orders.create(orderRequest);
             String orderId = order.get("id");
 
-            // Create a PENDING booking so verifyPayment can find it later
-            Booking booking = Booking.builder()
-                    .user(user)
-                    .event(event)
-                    .quantity(quantity)
-                    .totalCents(totalCents)
-                    .status(BookingStatus.PENDING)
-                    .razorpayOrderId(orderId)
-                    .build();
+            booking.setRazorpayOrderId(orderId);
             bookingRepository.save(booking);
 
             return Map.of(
@@ -100,52 +89,37 @@ public class PaymentService {
                     "amount", totalCents,
                     "currency", "INR",
                     "keyId", razorpayKeyId,
-                    "eventName", event.getTitle(),
+                    "eventName", booking.getEvent().getTitle(),
                     "quantity", quantity
             );
         } catch (RazorpayException e) {
-            throw new RuntimeException("Failed to create payment order: " + e.getMessage(), e);
+            // Rollback: mark the booking as CANCELLED since order creation failed
+            booking.setStatus(BookingStatus.CANCELLED);
+            bookingRepository.save(booking);
+            log.error("Razorpay order creation failed for event {}: {}", eventId, e.getMessage());
+            throw e;
         }
     }
 
     @Transactional
     public Booking verifyPayment(String razorpayOrderId, String razorpayPaymentId,
                                   String razorpaySignature, String userEmail) {
-        // Verify HMAC SHA256 signature
-        try {
-            String payload = razorpayOrderId + "|" + razorpayPaymentId;
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(razorpayKeySecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            byte[] hash = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b));
-            }
-            String expectedSignature = sb.toString();
+        verifyHmacSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature);
 
-            if (!expectedSignature.equals(razorpaySignature)) {
-                log.warn("Razorpay signature mismatch for order {}", razorpayOrderId);
-                throw new IllegalArgumentException("Payment signature verification failed");
-            }
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Error verifying Razorpay signature: {}", e.getMessage());
-            throw new RuntimeException("Payment verification error", e);
-        }
-
-        User user = userRepository.findByEmail(userEmail)
+        var user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
 
         Booking booking = bookingRepository.findByRazorpayOrderId(razorpayOrderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking", "razorpayOrderId", razorpayOrderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking",
+                        "razorpayOrderId", razorpayOrderId));
 
         if (!booking.getUser().getId().equals(user.getId())) {
             throw new org.springframework.security.access.AccessDeniedException("Unauthorized");
         }
 
         Event event = eventRepository.findByIdForUpdate(booking.getEvent().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", booking.getEvent().getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Event", "id",
+                        booking.getEvent().getId()));
 
         event.incrementBookedCount(booking.getQuantity());
         eventRepository.save(event);
@@ -153,32 +127,49 @@ public class PaymentService {
         booking.setPaymentId(razorpayPaymentId);
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.setPaidAt(LocalDateTime.now());
+        Booking confirmed = bookingRepository.save(booking);
 
-        return bookingRepository.save(booking);
+        // Evict stale event cache so capacity updates are visible
+        evictEventCache(event.getId());
+
+        return confirmed;
     }
 
-    @Transactional
-    public Booking createFreeBooking(Long eventId, int quantity, String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
+    // ── Internal helpers ───────────────────────────────────────
 
-        Event event = eventRepository.findByIdForUpdate(eventId)
-                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", eventId));
+    private void verifyHmacSignature(String orderId, String paymentId, String signature) {
+        try {
+            String payload = orderId + "|" + paymentId;
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(
+                    razorpayKeySecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            byte[] hash = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            String expected = sb.toString();
 
-        event.validateForBooking(quantity);
+            if (!expected.equals(signature)) {
+                log.warn("Razorpay signature mismatch for order {}", orderId);
+                throw new IllegalArgumentException("Payment signature verification failed");
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error computing Razorpay HMAC: {}", e.getMessage(), e);
+            throw new IllegalStateException("Payment verification error", e);
+        }
+    }
 
-        event.incrementBookedCount(quantity);
-        eventRepository.save(event);
-
-        Booking booking = Booking.builder()
-                .user(user)
-                .event(event)
-                .quantity(quantity)
-                .totalCents(0L)
-                .status(BookingStatus.CONFIRMED)
-                .paidAt(LocalDateTime.now())
-                .build();
-
-        return bookingRepository.save(booking);
+    private void evictEventCache(Long eventId) {
+        try {
+            var cache = cacheManager.getCache("event-detail");
+            if (cache != null) {
+                cache.evict(eventId);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to evict event cache for {}: {}", eventId, e.getMessage());
+        }
     }
 }

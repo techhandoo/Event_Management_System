@@ -1,13 +1,16 @@
 package com.eventmanager.config;
 
 import com.eventmanager.controller.PaymentController;
+import com.eventmanager.mapper.BookingMapper;
 import com.eventmanager.repository.BookingRepository;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
+import com.eventmanager.service.BookingService;
 import com.eventmanager.service.PaymentService;
 import com.razorpay.RazorpayClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,13 +33,16 @@ public class RazorpayConfig {
     public PaymentService paymentService(RazorpayClient razorpayClient,
                                           BookingRepository bookingRepository,
                                           EventRepository eventRepository,
-                                          UserRepository userRepository) {
+                                          UserRepository userRepository,
+                                          BookingService bookingService,
+                                          CacheManager cacheManager) {
         return new PaymentService(razorpayClient, bookingRepository, eventRepository,
-                userRepository, keyId, keySecret);
+                userRepository, bookingService, cacheManager, keyId, keySecret);
     }
 
     @Bean
-    public PaymentController paymentController(PaymentService paymentService) {
-        return new PaymentController(paymentService);
+    public PaymentController paymentController(PaymentService paymentService,
+                                               BookingMapper bookingMapper) {
+        return new PaymentController(paymentService, bookingMapper);
     }
 }

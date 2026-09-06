@@ -14,16 +14,21 @@ import com.eventmanager.model.enums.BookingStatus;
 import com.eventmanager.repository.BookingRepository;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class BookingService {
+
+    private static final Logger log = LoggerFactory.getLogger(BookingService.class);
 
     private final BookingRepository bookingRepository;
     private final EventRepository eventRepository;
@@ -42,44 +47,19 @@ public class BookingService {
         this.bookingMapper = bookingMapper;
     }
 
+    // ── Public API ─────────────────────────────────────────────
+
     @Transactional
     public BookingResponse createBooking(CreateBookingRequest request, String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
-
-        Event event = eventRepository.findByIdForUpdate(request.getEventId())
-                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", request.getEventId()));
-
         int quantity = request.getQuantity() != null ? request.getQuantity() : 1;
-        event.validateForBooking(quantity);
+        Booking booking = prepareBooking(request.getEventId(), quantity, userEmail,
+                BookingStatus.CONFIRMED);
 
-        // Check for existing active booking
-        List<BookingStatus> activeStatuses = List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED);
-        if (bookingRepository.existsByUserIdAndEventIdAndStatusIn(user.getId(), event.getId(), activeStatuses)) {
-            throw new DuplicateResourceException("You already have an active booking for this event");
-        }
-
-        event.incrementBookedCount(quantity);
-        eventRepository.save(event);
-
-        long totalCents = event.getPriceCents() * quantity;
-
-        Booking booking = Booking.builder()
-                .user(user)
-                .event(event)
-                .quantity(quantity)
-                .totalCents(totalCents)
-                .status(BookingStatus.CONFIRMED)
-                .build();
-
+        eventRepository.save(booking.getEvent());
         booking = bookingRepository.save(booking);
 
-        BookingEvent kafkaEvent = BookingEvent.of(
-                booking.getId(), user.getId(), user.getEmail(),
-                event.getId(), event.getTitle(),
-                quantity, totalCents, "CONFIRMED"
-        );
-        if (bookingEventProducer != null) bookingEventProducer.sendBookingEvent(kafkaEvent);
+        sendBookingKafkaEvent(booking, booking.getUser(), booking.getEvent(),
+                quantity, booking.getTotalCents(), "CONFIRMED");
 
         return bookingMapper.toResponse(booking);
     }
@@ -100,8 +80,10 @@ public class BookingService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
 
-        if (!booking.getUser().getId().equals(user.getId()) && user.getRole() != com.eventmanager.model.enums.Role.ADMIN) {
-            throw new org.springframework.security.access.AccessDeniedException("You can only view your own bookings");
+        if (!booking.getUser().getId().equals(user.getId())
+                && user.getRole() != com.eventmanager.model.enums.Role.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You can only view your own bookings");
         }
 
         return bookingMapper.toResponse(booking);
@@ -115,16 +97,20 @@ public class BookingService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
 
-        if (!booking.getUser().getId().equals(user.getId()) && user.getRole() != com.eventmanager.model.enums.Role.ADMIN) {
-            throw new org.springframework.security.access.AccessDeniedException("You can only cancel your own bookings");
+        if (!booking.getUser().getId().equals(user.getId())
+                && user.getRole() != com.eventmanager.model.enums.Role.ADMIN) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You can only cancel your own bookings");
         }
 
-        if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.REFUNDED) {
+        if (booking.getStatus() == BookingStatus.CANCELLED
+                || booking.getStatus() == BookingStatus.REFUNDED) {
             throw new IllegalArgumentException("Booking is already cancelled or refunded");
         }
 
         Event event = eventRepository.findByIdForUpdate(booking.getEvent().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", booking.getEvent().getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Event", "id",
+                        booking.getEvent().getId()));
 
         event.releaseCapacity(booking.getQuantity());
         eventRepository.save(event);
@@ -132,13 +118,79 @@ public class BookingService {
         booking.setStatus(BookingStatus.CANCELLED);
         Booking savedBooking = bookingRepository.save(booking);
 
-        BookingEvent kafkaEvent = BookingEvent.of(
-                savedBooking.getId(), savedBooking.getUser().getId(), savedBooking.getUser().getEmail(),
-                event.getId(), event.getTitle(),
-                savedBooking.getQuantity(), savedBooking.getTotalCents(), "CANCELLED"
-        );
-        if (bookingEventProducer != null) bookingEventProducer.sendBookingEvent(kafkaEvent);
+        sendBookingKafkaEvent(savedBooking, savedBooking.getUser(), event,
+                savedBooking.getQuantity(), savedBooking.getTotalCents(), "CANCELLED");
 
         return bookingMapper.toResponse(savedBooking);
+    }
+
+    // ── Shared logic (package-private for PaymentService) ──────
+
+    /**
+     * Shared booking preparation used by both free (createBooking) and paid (PaymentService.createOrder) flows.
+     * Validates user/event, checks for duplicates, creates or reactivates a booking.
+     * Does NOT persist the event — caller must call eventRepository.save(event).
+     * Does NOT persist the booking — caller must call bookingRepository.save(booking).
+     */
+    Booking prepareBooking(Long eventId, int quantity, String userEmail, BookingStatus targetStatus) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
+
+        Event event = eventRepository.findByIdForUpdate(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", eventId));
+
+        event.validateForBooking(quantity);
+
+        Optional<Booking> existingBooking = bookingRepository
+                .findByUserIdAndEventId(user.getId(), event.getId());
+
+        if (existingBooking.isPresent()) {
+            Booking existing = existingBooking.get();
+            boolean isTerminal = existing.getStatus() == BookingStatus.CANCELLED
+                    || existing.getStatus() == BookingStatus.REFUNDED;
+
+            if (isTerminal) {
+                existing.setStatus(targetStatus);
+                existing.setQuantity(quantity);
+                existing.setTotalCents(event.getPriceCents() * quantity);
+                existing.setPaymentId(null);
+                existing.setRazorpayOrderId(null);
+                if (targetStatus == BookingStatus.CONFIRMED) {
+                    existing.setPaidAt(LocalDateTime.now());
+                }
+                event.incrementBookedCount(quantity);
+                return existing;
+            }
+            throw new DuplicateResourceException(
+                    "You already have an active booking for this event");
+        }
+
+        event.incrementBookedCount(quantity);
+
+        return Booking.builder()
+                .user(user)
+                .event(event)
+                .quantity(quantity)
+                .totalCents(event.getPriceCents() * quantity)
+                .status(targetStatus)
+                .build();
+    }
+
+    // ── Kafka ──────────────────────────────────────────────────
+
+    void sendBookingKafkaEvent(Booking booking, User user, Event event,
+                               int quantity, long totalCents, String status) {
+        if (bookingEventProducer == null) return;
+        try {
+            BookingEvent kafkaEvent = BookingEvent.of(
+                    booking.getId(), user.getId(), user.getEmail(),
+                    event.getId(), event.getTitle(),
+                    quantity, totalCents, status
+            );
+            bookingEventProducer.sendBookingEvent(kafkaEvent);
+        } catch (Exception e) {
+            log.warn("Failed to send booking Kafka event for booking {}: {}",
+                    booking.getId(), e.getMessage());
+        }
     }
 }
