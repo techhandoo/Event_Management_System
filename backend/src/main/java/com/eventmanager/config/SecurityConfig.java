@@ -135,7 +135,13 @@ public class SecurityConfig {
      * Spring Security's CookieCsrfTokenRepository only sets it when
      * csrfTokenRepository.loadToken() is called. This filter ensures it's always present.
      */
-    private static class CsrfTokenCookieFilter extends OncePerRequestFilter {
+    private class CsrfTokenCookieFilter extends OncePerRequestFilter {
+        @Value("${app.cookie.secure:true}")
+        private boolean cookieSecure;
+
+        @Value("${app.cookie.same-site:None}")
+        private String cookieSameSite;
+
         @Override
         protected void doFilterInternal(HttpServletRequest request,
                                         HttpServletResponse response,
@@ -145,9 +151,11 @@ public class SecurityConfig {
             if (csrfToken != null) {
                 // Use addHeader to APPEND, not overwrite existing Set-Cookie headers
                 // (auth cookies are set later in the filter chain)
-                response.addHeader("Set-Cookie",
-                        "XSRF-TOKEN=" + csrfToken.getToken()
-                        + "; Path=/; SameSite=Strict");
+                // SameSite must match app.cookie.same-site (None for cross-origin)
+                String header = "XSRF-TOKEN=" + csrfToken.getToken()
+                        + "; Path=/; SameSite=" + cookieSameSite;
+                if (cookieSecure) header += "; Secure";
+                response.addHeader("Set-Cookie", header);
             }
             filterChain.doFilter(request, response);
         }

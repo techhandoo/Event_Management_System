@@ -7,6 +7,7 @@ import com.eventmanager.model.enums.Role;
 import com.eventmanager.repository.UserRepository;
 import com.eventmanager.security.CookieHelper;
 import com.eventmanager.security.JwtTokenProvider;
+import com.eventmanager.validation.PasswordValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -96,10 +97,9 @@ public class AdminSeedController {
                     .body(ApiResponse.error("email, password, and fullName are required"));
         }
 
-        if (password.length() < 8 || !password.matches(".*[A-Z].*") || !password.matches(".*[a-z].*")
-                || !password.matches(".*\d.*") || !password.matches(".*[^A-Za-z0-9].*")) {
+        if (!PasswordValidator.isStrong(password)) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Password must contain uppercase, lowercase, number, and special character"));
+                    .body(ApiResponse.error(PasswordValidator.describeFailures(password)));
         }
 
         if (userRepository.existsByEmail(email)) {
