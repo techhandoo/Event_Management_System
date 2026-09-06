@@ -14,6 +14,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * IP-based rate limiter for auth endpoints.
  * Single responsibility: only handles per-IP request throttling.
@@ -28,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
     private final Map<String, RateBucket> buckets = new ConcurrentHashMap<>();
 
     private static final int LOGIN_LIMIT = 5;
@@ -56,6 +60,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         RateBucket bucket = buckets.computeIfAbsent(key, k -> new RateBucket());
 
         if (!bucket.tryAcquire(limit, WINDOW_MS)) {
+            log.warn("Rate limit exceeded for {} from IP {}", path, clientIp);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType("application/json");
             response.getWriter().write(

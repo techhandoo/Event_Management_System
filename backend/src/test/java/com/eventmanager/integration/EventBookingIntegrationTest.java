@@ -3,7 +3,6 @@ package com.eventmanager.integration;
 import com.eventmanager.dto.request.CreateBookingRequest;
 import com.eventmanager.dto.request.CreateEventRequest;
 import com.eventmanager.dto.request.RegisterRequest;
-import com.eventmanager.dto.response.AuthResponse;
 import com.eventmanager.dto.response.BookingResponse;
 import com.eventmanager.dto.response.EventResponse;
 import com.eventmanager.model.enums.BookingStatus;
@@ -73,8 +72,8 @@ class EventBookingIntegrationTest {
                 .fullName("Test Organizer")
                 .build();
 
-        AuthResponse response = authService.register(request);
-        organizerToken = response.getAccessToken();
+        var result = authService.registerWithTokens(request);
+        organizerToken = result.accessToken();
 
         assertNotNull(organizerToken);
         assertFalse(organizerToken.isEmpty());
@@ -89,8 +88,8 @@ class EventBookingIntegrationTest {
                 .fullName("Test Attendee")
                 .build();
 
-        AuthResponse response = authService.register(request);
-        attendeeToken = response.getAccessToken();
+        var result = authService.registerWithTokens(request);
+        attendeeToken = result.accessToken();
 
         assertNotNull(attendeeToken);
     }

@@ -13,6 +13,7 @@ import com.eventmanager.model.enums.Role;
 import com.eventmanager.repository.BookingRepository;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
+import com.eventmanager.security.InputSanitizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +42,7 @@ class EventServiceTest {
     @Mock private BookingRepository bookingRepository;
     @Mock private EventMapper eventMapper;
     @Mock private EventEventProducer eventEventProducer;
+    @Mock private InputSanitizer inputSanitizer;
 
     @InjectMocks private EventService eventService;
 
@@ -50,6 +52,9 @@ class EventServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(eventService, "eventEventProducer", eventEventProducer);
+        // InputSanitizer passes through by default
+        when(inputSanitizer.sanitize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(inputSanitizer.sanitizeRich(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         organizer = User.builder()
                 .id(1L).email("org@example.com").fullName("Org User").role(Role.ORGANIZER).isActive(true).build();

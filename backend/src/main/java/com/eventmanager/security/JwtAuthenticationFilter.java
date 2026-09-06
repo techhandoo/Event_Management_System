@@ -2,11 +2,11 @@ package com.eventmanager.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,6 +20,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Extracts JWT from httpOnly cookie (primary) or Authorization header (fallback).
+ * Tokens never touch JavaScript — immune to XSS theft.
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -28,12 +32,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
     private final UserDetailsService userDetailsService;
-
-    @Value("${app.jwt.authorization-header}")
-    private String authorizationHeader;
-
-    @Value("${app.jwt.token-prefix}")
-    private String tokenPrefix;
 
     public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserDetailsService userDetailsService) {
         this.tokenProvider = tokenProvider;
@@ -70,10 +68,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * Extract JWT from httpOnly cookie first, then fallback to Authorization header.
+     */
     private String getJwtFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader(authorizationHeader);
+        // 1. Try httpOnly cookie (enterprise pattern)
+        String cookieToken = getJwtFromCookie(request);
+        if (cookieToken != null) {
+            return cookieToken;
+        }
+
+        // 2. Fallback: Authorization header (for API clients, Swagger, etc.)
+        String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7); // "Bearer " is 7 chars
+            return bearerToken.substring(7);
+        }
+
+        return null;
+    }
+
+    private String getJwtFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) return null;
+
+        for (Cookie cookie : cookies) {
+            if (CookieHelper.ACCESS_TOKEN_COOKIE.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
         }
         return null;
     }

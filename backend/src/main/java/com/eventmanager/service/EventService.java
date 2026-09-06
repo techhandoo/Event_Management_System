@@ -14,6 +14,7 @@ import com.eventmanager.model.enums.EventStatus;
 import com.eventmanager.repository.BookingRepository;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
+import com.eventmanager.security.InputSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -30,17 +31,20 @@ public class EventService {
     private final UserRepository userRepository;
     private final EventMapper eventMapper;
     private final BookingRepository bookingRepository;
+    private final InputSanitizer inputSanitizer;
     @Autowired(required = false)
     private EventEventProducer eventEventProducer;
 
     public EventService(EventRepository eventRepository,
                         UserRepository userRepository,
                         EventMapper eventMapper,
-                        BookingRepository bookingRepository) {
+                        BookingRepository bookingRepository,
+                        InputSanitizer inputSanitizer) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.eventMapper = eventMapper;
         this.bookingRepository = bookingRepository;
+        this.inputSanitizer = inputSanitizer;
     }
 
     @Transactional
@@ -50,10 +54,10 @@ public class EventService {
 
         Event event = Event.builder()
                 .organizer(organizer)
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .venue(request.getVenue())
-                .city(request.getCity())
+                .title(inputSanitizer.sanitize(request.getTitle()))
+                .description(request.getDescription() != null ? inputSanitizer.sanitizeRich(request.getDescription()) : null)
+                .venue(inputSanitizer.sanitize(request.getVenue()))
+                .city(inputSanitizer.sanitize(request.getCity()))
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .capacity(request.getCapacity())
@@ -107,10 +111,10 @@ public class EventService {
             throw new org.springframework.security.access.AccessDeniedException("You can only update your own events");
         }
 
-        if (request.getTitle() != null) event.setTitle(request.getTitle());
-        if (request.getDescription() != null) event.setDescription(request.getDescription());
-        if (request.getVenue() != null) event.setVenue(request.getVenue());
-        if (request.getCity() != null) event.setCity(request.getCity());
+        if (request.getTitle() != null) event.setTitle(inputSanitizer.sanitize(request.getTitle()));
+        if (request.getDescription() != null) event.setDescription(inputSanitizer.sanitizeRich(request.getDescription()));
+        if (request.getVenue() != null) event.setVenue(inputSanitizer.sanitize(request.getVenue()));
+        if (request.getCity() != null) event.setCity(inputSanitizer.sanitize(request.getCity()));
         if (request.getStartTime() != null) event.setStartTime(request.getStartTime());
         if (request.getEndTime() != null) event.setEndTime(request.getEndTime());
         if (request.getCapacity() != null) event.setCapacity(request.getCapacity());

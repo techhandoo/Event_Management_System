@@ -1,5 +1,6 @@
 package com.eventmanager.dto.request;
 
+import com.eventmanager.validation.StrongPassword;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -18,5 +19,6 @@ public class ResetPasswordRequest {
 
     @NotBlank(message = "New password is required")
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
+    @StrongPassword
     private String newPassword;
 }

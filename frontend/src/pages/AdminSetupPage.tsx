@@ -23,9 +23,7 @@ export default function AdminSetupPage() {
   setIsSubmitting(true);
   try {
    const response = await api.post('/auth/seed-admin', data);
-   const { accessToken, refreshToken, user } = response.data.data;
-   localStorage.setItem('accessToken', accessToken);
-   localStorage.setItem('refreshToken', refreshToken);
+   const user = response.data.data.user || response.data.data;
    localStorage.setItem('user', JSON.stringify(user));
    setSuccess(true);
    toast.success('Admin account created!');

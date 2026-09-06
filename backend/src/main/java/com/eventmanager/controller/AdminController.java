@@ -3,6 +3,7 @@ package com.eventmanager.controller;
 import com.eventmanager.dto.response.ApiResponse;
 import com.eventmanager.dto.response.AnalyticsResponse;
 import com.eventmanager.dto.response.UserResponse;
+import com.eventmanager.security.AuditLogger;
 import com.eventmanager.service.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,9 +21,11 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final AuditLogger auditLogger;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService, AuditLogger auditLogger) {
         this.adminService = adminService;
+        this.auditLogger = auditLogger;
     }
 
     @GetMapping("/users")
@@ -50,6 +53,7 @@ public class AdminController {
             @RequestParam String role,
             @AuthenticationPrincipal UserDetails adminEmail) {
         UserResponse user = adminService.changeUserRole(userId, role, adminEmail.getUsername());
+        auditLogger.logRoleChange(adminEmail.getUsername(), user.getEmail(), role);
         return ResponseEntity.ok(ApiResponse.success("Role updated successfully", user));
     }
 

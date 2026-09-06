@@ -1,9 +1,14 @@
 package com.eventmanager.config;
 
 import com.eventmanager.security.AccountLockoutFilter;
+import com.eventmanager.security.CookieHelper;
 import com.eventmanager.security.JwtAuthenticationFilter;
 import com.eventmanager.security.RateLimitFilter;
+import jakarta.servlet.Filter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,18 +17,20 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import jakarta.servlet.Filter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -56,7 +63,19 @@ public class SecurityConfig {
 
         var auth = http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
+            // ── CSRF: double-submit cookie pattern ─────────────
+            // Spring reads the XSRF-TOKEN cookie and validates
+            // the X-XSRF-TOKEN header on state-changing requests.
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers(
+                    "/api/auth/login",    // Login has no CSRF token yet
+                    "/api/auth/register", // Registration has no CSRF token yet
+                    "/api/auth/refresh",  // Refresh uses cookie, not form
+                    "/api/webhooks/**"    // Razorpay webhooks
+                )
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            )
+            // ── Headers ────────────────────────────────────────
             .headers(headers -> headers
                 .frameOptions(frame -> frame.deny())
                 .httpStrictTransportSecurity(hsts -> hsts
@@ -102,6 +121,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
+            // ── Ensure CSRF token is set on every response ─────
+            .addFilterAfter(new CsrfTokenCookieFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(accountLockoutFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -110,10 +131,30 @@ public class SecurityConfig {
     }
 
     /**
+     * Ensures the CSRF token cookie (XSRF-TOKEN) is set on every response.
+     * Spring Security's CookieCsrfTokenRepository only sets it when
+     * csrfTokenRepository.loadToken() is called. This filter ensures it's always present.
+     */
+    private static class CsrfTokenCookieFilter extends OncePerRequestFilter {
+        @Override
+        protected void doFilterInternal(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        jakarta.servlet.FilterChain filterChain)
+                throws java.io.IOException, jakarta.servlet.ServletException {
+            CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
+            if (csrfToken != null) {
+                // Use addHeader to APPEND, not overwrite existing Set-Cookie headers
+                // (auth cookies are set later in the filter chain)
+                response.addHeader("Set-Cookie",
+                        "XSRF-TOKEN=" + csrfToken.getToken()
+                        + "; Path=/; SameSite=Strict");
+            }
+            filterChain.doFilter(request, response);
+        }
+    }
+
+    /**
      * Disable auto-registration of security filters as servlet filters.
-     * They are registered in the SecurityFilterChain via addFilterBefore().
-     * Without this, Spring Boot auto-registers @Component filters as servlet filters,
-     * causing them to run outside the Spring Security chain.
      */
     @Bean
     public FilterRegistrationBean<Filter>[] disableFilterAutoRegistration(
@@ -145,11 +186,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         String[] origins = allowedOrigins.split(",");
-        config.setAllowedOriginPatterns(java.util.List.of(origins));
+        config.setAllowedOriginPatterns(Arrays.asList(origins));
         config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type", "Refresh-Token", "Accept", "Origin", "X-Requested-With"));
-        config.setExposedHeaders(java.util.List.of("Authorization", "Refresh-Token"));
-        config.setAllowCredentials(true);
+        config.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type", "X-XSRF-TOKEN", "Accept", "Origin"));
+        config.setExposedHeaders(java.util.List.of("XSRF-TOKEN"));
+        config.setAllowCredentials(true); // Required for cookies
         config.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
