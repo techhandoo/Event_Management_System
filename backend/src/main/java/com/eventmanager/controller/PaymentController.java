@@ -4,6 +4,7 @@ import com.eventmanager.dto.response.ApiResponse;
 import com.eventmanager.dto.response.BookingResponse;
 import com.eventmanager.mapper.BookingMapper;
 import com.eventmanager.service.PaymentService;
+import com.razorpay.RazorpayException;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -48,7 +49,8 @@ public class PaymentController {
     @PostMapping("/create-order")
     public ResponseEntity<ApiResponse<Map<String, Object>>> createOrder(
             @RequestBody CreateOrderRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails)
+            throws RazorpayException {
         Map<String, Object> order = paymentService.createOrder(
                 request.getEventId(), request.getQuantity(), userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success("Order created", order));
