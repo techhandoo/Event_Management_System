@@ -1,13 +1,16 @@
 package com.eventmanager.controller;
 
 import com.eventmanager.dto.response.ApiResponse;
-import com.eventmanager.dto.response.AuthResponse;
+import com.eventmanager.dto.response.UserResponse;
 import com.eventmanager.model.User;
 import com.eventmanager.model.enums.Role;
 import com.eventmanager.repository.UserRepository;
+import com.eventmanager.security.CookieHelper;
 import com.eventmanager.security.JwtTokenProvider;
+import com.eventmanager.validation.PasswordValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,9 +37,16 @@ public class AdminSeedController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final CookieHelper cookieHelper;
 
     @Value("${ADMIN_SEED_KEY:}")
     private String seedKey;
+
+    @Value("${app.jwt.access-token-expiration-ms:900000}")
+    private long accessTokenExpirationMs;
+
+    @Value("${app.jwt.refresh-token-expiration-ms:604800000}")
+    private long refreshTokenExpirationMs;
 
     @jakarta.annotation.PostConstruct
     public void init() {
@@ -47,15 +57,18 @@ public class AdminSeedController {
 
     public AdminSeedController(UserRepository userRepository,
                                 PasswordEncoder passwordEncoder,
-                                JwtTokenProvider jwtTokenProvider) {
+                                JwtTokenProvider jwtTokenProvider,
+                                CookieHelper cookieHelper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.cookieHelper = cookieHelper;
     }
 
     @PostMapping("/seed-admin")
     @Operation(summary = "Create the first admin user (one-time only)")
-    public ResponseEntity<?> seedAdmin(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> seedAdmin(@RequestBody Map<String, String> body,
+                                       HttpServletResponse response) {
         // Check if seed key is configured
         if (seedKey == null || seedKey.isBlank()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -84,9 +97,9 @@ public class AdminSeedController {
                     .body(ApiResponse.error("email, password, and fullName are required"));
         }
 
-        if (password.length() < 8) {
+        if (!PasswordValidator.isStrong(password)) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Password must be at least 8 characters"));
+                    .body(ApiResponse.error(PasswordValidator.describeFailures(password)));
         }
 
         if (userRepository.existsByEmail(email)) {
@@ -104,22 +117,21 @@ public class AdminSeedController {
 
         admin = userRepository.save(admin);
 
+        // Set tokens as httpOnly cookies
         String accessToken = jwtTokenProvider.generateAccessToken(admin.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(admin.getEmail());
+        cookieHelper.setAccessTokenCookie(response, accessToken, accessTokenExpirationMs / 1000);
+        cookieHelper.setRefreshTokenCookie(response, refreshToken, refreshTokenExpirationMs / 1000);
 
-        AuthResponse authResponse = AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .user(com.eventmanager.dto.response.UserResponse.builder()
-                        .id(admin.getId())
-                        .email(admin.getEmail())
-                        .fullName(admin.getFullName())
-                        .role(admin.getRole())
-                        .isActive(admin.getIsActive())
-                        .build())
+        UserResponse userResponse = UserResponse.builder()
+                .id(admin.getId())
+                .email(admin.getEmail())
+                .fullName(admin.getFullName())
+                .role(admin.getRole())
+                .isActive(admin.getIsActive())
                 .build();
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Admin user created successfully", authResponse));
+                .body(ApiResponse.success("Admin user created successfully", userResponse));
     }
 }

@@ -1,7 +1,6 @@
 package com.eventmanager.service;
 
 import com.eventmanager.dto.request.*;
-import com.eventmanager.dto.response.AuthResponse;
 import com.eventmanager.dto.response.UserResponse;
 import com.eventmanager.dto.response.ValidateTokenResponse;
 import com.eventmanager.exception.DuplicateResourceException;
@@ -50,13 +49,18 @@ public class AuthService {
         this.tokenBlacklist = tokenBlacklist;
     }
 
+    // ── Record for cookie-based auth flow ──────────────────────
+
+    public record TokenResult(String accessToken, String refreshToken, UserResponse user) {}
+
+    // ── Cookie-based auth (tokens set as httpOnly cookies) ─────
+
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public TokenResult registerWithTokens(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email already registered: " + request.getEmail());
         }
 
-        // Determine role — only ATTENDEE and ORGANIZER allowed via self-registration
         Role role = Role.ATTENDEE;
         if (request.getRole() != null) {
             try {
@@ -80,28 +84,32 @@ public class AuthService {
         String accessToken = tokenProvider.generateAccessToken(user.getEmail());
         String refreshToken = tokenProvider.generateRefreshToken(user.getEmail());
 
-        return AuthResponse.of(accessToken, refreshToken, tokenProvider.getAccessTokenExpirationMs(),
-                userMapper.toResponse(user));
+        return new TokenResult(accessToken, refreshToken, userMapper.toResponse(user));
     }
 
     @Transactional(readOnly = true)
-    public AuthResponse login(LoginRequest request) {
+    public TokenResult loginWithTokens(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
         String email = authentication.getName();
-        String accessToken = tokenProvider.generateAccessToken(email);
-        String refreshToken = tokenProvider.generateRefreshToken(email);
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return AuthResponse.of(accessToken, refreshToken, tokenProvider.getAccessTokenExpirationMs(),
-                userMapper.toResponse(user));
+        if (!user.getIsActive()) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Account has been disabled. Contact support.");
+        }
+
+        String accessToken = tokenProvider.generateAccessToken(email);
+        String refreshToken = tokenProvider.generateRefreshToken(email);
+
+        return new TokenResult(accessToken, refreshToken, userMapper.toResponse(user));
     }
 
     @Transactional(readOnly = true)
-    public AuthResponse refreshToken(String refreshToken) {
+    public TokenResult refreshWithTokens(String refreshToken) {
         if (tokenBlacklist.isRevoked(refreshToken)) {
             throw new IllegalArgumentException("Refresh token has been revoked");
         }
@@ -121,18 +129,22 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return AuthResponse.of(newAccessToken, newRefreshToken, tokenProvider.getAccessTokenExpirationMs(),
-                userMapper.toResponse(user));
+        return new TokenResult(newAccessToken, newRefreshToken, userMapper.toResponse(user));
     }
 
-    /**
-     * Logout — revoke the refresh token so it can no longer be used.
-     * Access tokens are short-lived (15 min) and can't be revoked (stateless JWT).
-     */
     public void logout(String refreshToken) {
         if (refreshToken != null && !refreshToken.isBlank()) {
             tokenBlacklist.revoke(refreshToken);
         }
+    }
+
+    @Transactional
+    public void verifyEmail(String token) {
+        User user = userRepository.findByEmailVerificationToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid verification token"));
+        user.setEmailVerified(true);
+        user.setEmailVerificationToken(null);
+        userRepository.save(user);
     }
 
     // ── Password Reset ─────────────────────────────────────────
@@ -152,10 +164,8 @@ public class AuthService {
             user.setResetToken(token);
             user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
             userRepository.save(user);
-
             emailService.sendPasswordResetEmail(user.getEmail(), token);
         });
-        // Always return success (don't reveal if email exists)
     }
 
     @Transactional

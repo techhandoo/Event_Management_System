@@ -13,6 +13,7 @@ import com.eventmanager.model.enums.Role;
 import com.eventmanager.repository.BookingRepository;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
+import com.eventmanager.security.InputSanitizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +42,7 @@ class EventServiceTest {
     @Mock private BookingRepository bookingRepository;
     @Mock private EventMapper eventMapper;
     @Mock private EventEventProducer eventEventProducer;
+    @Mock private InputSanitizer inputSanitizer;
 
     @InjectMocks private EventService eventService;
 
@@ -71,6 +73,8 @@ class EventServiceTest {
                 .endTime(LocalDateTime.now().plusDays(8))
                 .capacity(100).priceCents(5000L).build();
 
+        // InputSanitizer passes through by default — only needed for create/update
+        when(inputSanitizer.sanitize(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(userRepository.findByEmail("org@example.com")).thenReturn(Optional.of(organizer));
         when(eventRepository.save(any(Event.class))).thenReturn(event);
         when(eventMapper.toResponse(any(Event.class))).thenReturn(

@@ -16,6 +16,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Account lockout filter — blocks login after 5 failed attempts for 15 minutes.
  *
@@ -25,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class AccountLockoutFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(AccountLockoutFilter.class);
     private final Map<String, Long> loginFailures = new ConcurrentHashMap<>();
     private final Map<String, Long> accountLockouts = new ConcurrentHashMap<>();
 

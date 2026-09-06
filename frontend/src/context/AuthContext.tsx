@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 import api from '../services/api';
-import { User, AuthResponse } from '../types';
+import { User } from '../types';
 
 /** Return the default landing page for a given role. */
 export function homeForRole(role?: string): string {
@@ -28,45 +29,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
  const [isLoading, setIsLoading] = useState(true);
 
  useEffect(() => {
-  const token = localStorage.getItem('accessToken');
+  // On mount: check if we have a stored user (cookies handle tokens)
   const storedUser = localStorage.getItem('user');
-  if (token && storedUser) {
-   setUser(JSON.parse(storedUser));
+  if (storedUser) {
+   try {
+    setUser(JSON.parse(storedUser));
+   } catch {
+    localStorage.removeItem('user');
+   }
   }
   setIsLoading(false);
  }, []);
 
  const login = async (email: string, password: string) => {
   const response = await api.post('/auth/login', { email, password });
-  const data: AuthResponse = response.data.data;
-  localStorage.setItem('accessToken', data.accessToken);
-  localStorage.setItem('refreshToken', data.refreshToken);
-  localStorage.setItem('user', JSON.stringify(data.user));
-  setUser(data.user);
-  return data.user; // return user so caller can use the role
+  const userData: User = response.data.data;
+  // Only store user info — tokens are in httpOnly cookies
+  localStorage.setItem('user', JSON.stringify(userData));
+  setUser(userData);
+  return userData;
  };
 
  const register = async (email: string, password: string, fullName: string, role?: string) => {
   const response = await api.post('/auth/register', { email, password, fullName, role: role || 'ATTENDEE' });
-  const data: AuthResponse = response.data.data;
-  localStorage.setItem('accessToken', data.accessToken);
-  localStorage.setItem('refreshToken', data.refreshToken);
-  localStorage.setItem('user', JSON.stringify(data.user));
-  setUser(data.user);
+  const userData: User = response.data.data;
+  localStorage.setItem('user', JSON.stringify(userData));
+  setUser(userData);
  };
 
  const logout = async () => {
-  // Revoke refresh token on server before clearing local state
-  const refreshToken = localStorage.getItem('refreshToken');
+  // Backend clears httpOnly cookies on /auth/logout
+  // Use raw axios to avoid interceptor refresh loop
   try {
-   await api.post('/auth/logout', null, {
-    headers: refreshToken ? { 'Refresh-Token': refreshToken } : {},
+   await axios.post('https://eventry-api.onrender.com/api/auth/logout', null, {
+    withCredentials: true,
    });
   } catch {
    // Logout should succeed even if server call fails
   }
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
   setUser(null);
  };
