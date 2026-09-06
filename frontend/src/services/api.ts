@@ -91,7 +91,12 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // On 401: try cookie-based refresh (browser sends refresh_token cookie automatically)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip refresh for auth endpoints — 401 means bad credentials, not expired token
+    const url = originalRequest?.url || '';
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/register')
+        || url.includes('/auth/logout') || url.includes('/auth/refresh')
+        || url.includes('/auth/forgot-password') || url.includes('/auth/reset-password');
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
       try {
         // Shared promise — only ONE refresh runs even if 5 requests get 401
