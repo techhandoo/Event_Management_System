@@ -14,6 +14,37 @@ const api = axios.create({
 let coldStartToastId: string | null = null;
 let pendingRequests = 0;
 
+// ─── Shared refresh promise ────────────────────────────
+// Prevents race condition: when multiple requests get 401 simultaneously,
+// only ONE refresh runs. Others await the same promise.
+let refreshPromise: Promise<void> | null = null;
+
+async function refreshAccessToken(): Promise<void> {
+  // If a refresh is already in progress, wait for it
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      // The refresh_token cookie is sent automatically by the browser
+      await axios.post('https://eventry-api.onrender.com/api/auth/refresh', null, {
+        withCredentials: true,
+      });
+      // New access_token + refresh_token cookies are now set by the browser
+    } catch (err) {
+      // Refresh failed — clear state and redirect to login
+      refreshPromise = null;
+      window.location.href = '/login';
+      throw err;
+    }
+  })();
+
+  try {
+    await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
 // ─── CSRF token helper ────────────────────────────────
 function getCsrfToken(): string | null {
   const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
@@ -63,16 +94,12 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        // The refresh_token cookie is sent automatically by the browser
-        // Backend reads it from the cookie and sets new access_token + refresh_token cookies
-        await axios.post('https://eventry-api.onrender.com/api/auth/refresh', null, {
-          withCredentials: true,
-        });
+        // Shared promise — only ONE refresh runs even if 5 requests get 401
+        await refreshAccessToken();
         // Retry original request — browser will use the new access_token cookie
         return api(originalRequest);
       } catch {
-        // Refresh failed — cookies were cleared by backend, redirect to login
-        window.location.href = '/login';
+        // refreshAccessToken already redirected to /login
         return Promise.reject(error);
       }
     }
