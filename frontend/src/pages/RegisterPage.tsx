@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Zap, ArrowRight, Users, Ticket } from 'lucide-react';
 import { cn } from '../lib/utils';
+import EventBackdrop from '../components/EventBackdrop';
 
 interface RegisterForm { fullName: string; email: string; password: string; }
 
@@ -27,8 +28,25 @@ export default function RegisterPage() {
    await reg(data.email, data.password, data.fullName, selectedRole);
    toast.success('Account created!');
    navigate(homeForRole(selectedRole));
-  } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to register'); }
+  } catch (err: any) {
+   if (err.response?.status === 409) {
+    toast.error('Email already registered — try signing in instead.');
+   } else {
+    toast.error(err.response?.data?.message || 'Failed to register');
+   }
+  }
   finally { setIsSubmitting(false); }
+ };
+
+ // Mirrors backend StrongPasswordValidator so users get instant feedback
+ const passwordRules = (v: string) => {
+  if (!v) return 'Password is required';
+  if (v.length < 8) return 'At least 8 characters';
+  if (!/[A-Z]/.test(v)) return 'Must include an uppercase letter';
+  if (!/[a-z]/.test(v)) return 'Must include a lowercase letter';
+  if (!/[0-9]/.test(v)) return 'Must include a number';
+  if (!/[^A-Za-z0-9]/.test(v)) return 'Must include a special character (!@#$ etc.)';
+  return true;
  };
 
  return (
@@ -40,10 +58,7 @@ export default function RegisterPage() {
     transition={{ duration: 0.8, delay: 0.2 }}
     className="hidden lg:flex flex-1 bg-gradient-to-br from-brand-950 via-violet-950 to-surface-0 items-center justify-center p-12 relative overflow-hidden order-first"
    >
-    <div className="absolute inset-0">
-     <div className="absolute top-20 right-20 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px]" />
-     <div className="absolute bottom-20 left-20 w-72 h-72 bg-violet-500/10 rounded-full blur-[80px]" />
-    </div>
+    <EventBackdrop />
     <div className="relative z-10 text-center max-w-md">
      <div className="w-16 h-16 bg-white/[0.08] rounded-2xl flex items-center justify-center mx-auto mb-8 border border-white/[0.1] ">
       <Zap className="text-white" size={28} />
@@ -130,9 +145,9 @@ export default function RegisterPage() {
         <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
         <input
          type="password"
-         {...register('password', { required: 'Password is required', minLength: { value: 8, message: 'At least 8 characters' } })}
+         {...register('password', { validate: passwordRules })}
          className={`input pl-11 ${errors.password ? 'input-error' : ''}`}
-         placeholder="Create a strong password"
+         placeholder="e.g. Eventry@2026"
         />
        </div>
        {errors.password && <p className="form-message">{errors.password.message}</p>}

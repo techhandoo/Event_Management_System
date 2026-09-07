@@ -73,6 +73,7 @@ public class SecurityConfig {
                     "/api/auth/refresh",    // Refresh uses cookie, not form
                     "/api/auth/logout",     // Logout uses raw axios, no CSRF token
                     "/api/auth/seed-admin", // One-time setup, no CSRF token on first visit
+                    "/api/contact",          // Public contact form — no session to protect
                     "/api/webhooks/**"      // Razorpay webhooks
                 )
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())

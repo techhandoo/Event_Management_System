@@ -7,10 +7,12 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { MapPin, Users, ArrowLeft, Ticket, Calendar, Share2, Heart } from 'lucide-react';
 import { PageLoader } from '../components/ui';
+import { loadRazorpay } from '../lib/razorpay';
+import confetti from 'canvas-confetti';
 
 export default function EventDetailPage() {
  const { id } = useParams<{ id: string }>();
- const { isAuthenticated } = useAuth();
+ const { isAuthenticated, user } = useAuth();
  const navigate = useNavigate();
  const [event, setEvent] = useState<Event | null>(null);
  const [loading, setLoading] = useState(true);
@@ -25,6 +27,12 @@ export default function EventDetailPage() {
    .finally(() => setLoading(false));
  }, [id, navigate]);
 
+ const celebrate = () => {
+  confetti({ particleCount: 120, spread: 75, origin: { y: 0.6 }, colors: ['#6366f1', '#8b5cf6', '#22d3ee', '#f59e0b'] });
+  setTimeout(() => confetti({ particleCount: 60, angle: 60, spread: 60, origin: { x: 0, y: 0.7 }, colors: ['#6366f1', '#8b5cf6'] }), 250);
+  setTimeout(() => confetti({ particleCount: 60, angle: 120, spread: 60, origin: { x: 1, y: 0.7 }, colors: ['#22d3ee', '#f59e0b'] }), 450);
+ };
+
  const handleBook = async () => {
   if (!isAuthenticated) { toast.error('Please sign in to book'); navigate('/login'); return; }
   setBooking(true);
@@ -33,16 +41,18 @@ export default function EventDetailPage() {
     // Free event — book directly
     await api.post('/bookings', { eventId: Number(id), quantity });
     toast.success('Booking confirmed!');
+    celebrate();
     navigate('/my-bookings');
    } else {
-    // Paid event — create Razorpay order
-    if (!(window as any).Razorpay) {
-     toast.error('Payment system is loading. Please try again in a moment.');
-     setBooking(false);
-     return;
-    }
+    // Paid event — create Razorpay order, loading the SDK on demand
     const orderRes = await api.post('/payments/create-order', { eventId: Number(id), quantity });
     const orderData = orderRes.data.data;
+    try {
+     await loadRazorpay();
+    } catch {
+     toast.error('Payment system is loading. Please try again in a moment.');
+     return;
+    }
     openRazorpayCheckout(orderData);
    }
   } catch (err: any) {
@@ -69,6 +79,7 @@ export default function EventDetailPage() {
       razorpaySignature: response.razorpay_signature,
      });
      toast.success('Payment successful! Booking confirmed.');
+     celebrate();
      navigate('/my-bookings');
     } catch (err: any) {
      toast.error('Payment was received but confirmation failed. Contact support.');
@@ -76,8 +87,8 @@ export default function EventDetailPage() {
     }
    },
    prefill: {
-    name: '',
-    email: '',
+    name: user?.fullName || '',
+    email: user?.email || '',
    },
    theme: {
     color: '#6366f1',

@@ -26,6 +26,53 @@ public class EmailService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    /**
+     * Sends a contact-form message to the platform owner.
+     */
+    public void sendContactEmail(String name, String fromEmail, String subject, String message) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(resendApiKey);
+
+            String htmlBody = """
+                <div style="font-family:Inter,system-ui,sans-serif;max-width:560px;margin:0 auto;">
+                    <h2 style="color:#0f172a;">New contact message</h2>
+                    <table style="border-collapse:collapse;width:100%%;font-size:14px;">
+                        <tr><td style="padding:6px 0;color:#64748b;">From</td><td style="padding:6px 0;color:#0f172a;"><b>%s</b> &lt;%s&gt;</td></tr>
+                        <tr><td style="padding:6px 0;color:#64748b;">Subject</td><td style="padding:6px 0;color:#0f172a;"><b>%s</b></td></tr>
+                    </table>
+                    <div style="margin-top:16px;padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;color:#334155;white-space:pre-wrap;">%s</div>
+                </div>
+                """.formatted(escapeHtml(name), escapeHtml(fromEmail), escapeHtml(subject), escapeHtml(message));
+
+            Map<String, Object> body = Map.of(
+                "from", fromAddress,
+                "to", new String[]{ fromAddress },
+                "subject", "[Contact] " + subject,
+                "html", htmlBody
+            );
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(RESEND_API_URL, request, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("Contact message sent from {} ({})", name, fromEmail);
+            } else {
+                log.error("Failed to send contact email: {}", response.getBody());
+                throw new RuntimeException("Email provider rejected the request");
+            }
+        } catch (Exception e) {
+            log.error("Error sending contact email from {}: {}", fromEmail, e.getMessage());
+            throw new RuntimeException("Could not send contact message", e);
+        }
+    }
+
+    private String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
     public void sendPasswordResetEmail(String toEmail, String resetToken) {
         String resetUrl = frontendUrl + "/reset-password?token=" + resetToken;
 

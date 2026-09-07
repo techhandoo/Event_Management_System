@@ -15,6 +15,7 @@
     "@radix-ui/react-tabs": "^1.1.21",
     "@vercel/analytics": "^2.0.1",
     "axios": "^1.6.7",
+    "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "framer-motion": "^13.1.1",
     "lucide-react": "^0.323.0",
@@ -29,6 +30,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
     "@vitejs/plugin-react": "^4.2.1",

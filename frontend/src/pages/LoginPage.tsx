@@ -5,6 +5,7 @@ import { useAuth, homeForRole } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Zap, ArrowRight } from 'lucide-react';
+import EventBackdrop from '../components/EventBackdrop';
 
 interface LoginForm { email: string; password: string; }
 
@@ -96,11 +97,7 @@ export default function LoginPage() {
     transition={{ duration: 0.8, delay: 0.2 }}
     className="hidden lg:flex flex-1 bg-gradient-to-br from-brand-950 via-violet-950 to-surface-0 items-center justify-center p-12 relative overflow-hidden"
    >
-    <div className="absolute inset-0">
-     <div className="absolute top-20 right-20 w-96 h-96 bg-brand-500/10 rounded-full blur-[100px]" />
-     <div className="absolute bottom-20 left-20 w-72 h-72 bg-violet-500/10 rounded-full blur-[80px]" />
-     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand-500/5 rounded-full blur-[120px]" />
-    </div>
+    <EventBackdrop />
     <div className="relative z-10 text-center max-w-md">
      <div className="w-16 h-16 bg-white/[0.08] rounded-2xl flex items-center justify-center mx-auto mb-8 border border-white/[0.1] ">
       <Zap className="text-white" size={28} />

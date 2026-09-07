@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import StaticPageLayout from '../../components/StaticPageLayout';
 import { Mail, MessageSquare, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../services/api';
 
 const fadeUp = {
  hidden: { opacity: 0, y: 20 },
@@ -20,12 +21,15 @@ export default function ContactPage() {
    return;
   }
   setLoading(true);
-  // TODO: Connect to backend email service
-  setTimeout(() => {
-   toast.success('Message sent! We\'ll get back to you within 24 hours.');
-   setForm({ name: '', email: '', subject: '', message: '' });
-   setLoading(false);
-  }, 1500);
+  api.post('/contact', form)
+   .then(() => {
+    toast.success('Message sent! We\'ll get back to you within 24 hours.');
+    setForm({ name: '', email: '', subject: '', message: '' });
+   })
+   .catch((err: any) => {
+    toast.error(err.response?.data?.message || 'Failed to send message. Please try again.');
+   })
+   .finally(() => setLoading(false));
  };
 
  return (
