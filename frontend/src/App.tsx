@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth, homeForRole } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
@@ -45,12 +46,20 @@ function PublicRoute({ children }: { children: ReactNode }) {
  return <>{children}</>;
 }
 
-function App() {
+function AnimatedRoutes() {
+ const location = useLocation();
  return (
-  <AuthProvider>
-   <SidebarProvider>
-    <Router>
-     <Routes>
+  // Page-fade route transitions: a short opacity crossfade on every navigation.
+  // initial={false} so the first render doesn't flash.
+  <AnimatePresence initial={false}>
+   <motion.div
+    key={location.pathname}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.12 }}
+   >
+    <Routes location={location}>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
@@ -78,7 +87,18 @@ function App() {
       <Route path="/403" element={<ErrorPage code={403} />} />
       <Route path="/500" element={<ErrorPage code={500} />} />
       <Route path="*" element={<ErrorPage code={404} />} />
-     </Routes>
+    </Routes>
+   </motion.div>
+  </AnimatePresence>
+ );
+}
+
+function App() {
+ return (
+  <AuthProvider>
+   <SidebarProvider>
+    <Router>
+     <AnimatedRoutes />
      <Toaster
       position="top-right"
       toastOptions={{

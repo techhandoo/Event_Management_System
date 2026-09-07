@@ -127,7 +127,12 @@ export default function EventsPage() {
       <p className="text-sm text-surface-500 mb-4 font-medium">{events.length} event{events.length !== 1 ? 's' : ''}</p>
       <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
        {events.map(event => (
-        <motion.div key={event.id} variants={item}>
+        <motion.div
+         key={event.id}
+         variants={item}
+         whileHover={{ y: -4 }}
+         transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] as const }}
+        >
          <Link to={`/events/${event.id}`} className="card-hover overflow-hidden group block h-full">
           <div className="h-44 bg-gradient-to-br from-brand-500 to-brand-700 relative overflow-hidden">
            {event.imageUrl ? (

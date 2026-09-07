@@ -23,6 +23,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -72,12 +73,22 @@ public class SecurityConfig {
             // Spring reads the XSRF-TOKEN cookie and validates
             // the X-XSRF-TOKEN header on state-changing requests.
             .csrf(csrf -> csrf
+                // CRITICAL: use the NON-Xor handler (SPA pattern).
+                // Spring Security 6.1+ defaults to XorCsrfTokenRequestAttributeHandler, which
+                // stores a MASKED token in the _csrf attribute. CsrfTokenCookieFilter copies
+                // that attribute into the XSRF-TOKEN cookie, so the cookie would hold the
+                // masked value while the repository compares against the raw token — every
+                // POST fails with 403. The raw-token handler keeps attribute, cookie and
+                // header identical so the browser's read-cookie -> send-header flow works.
+                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                 .ignoringRequestMatchers(
-                    "/api/auth/login",      // Login has no CSRF token yet
-                    "/api/auth/register",   // Registration has no CSRF token yet
-                    "/api/auth/refresh",    // Refresh uses cookie, not form
-                    "/api/auth/logout",     // Logout uses raw axios, no CSRF token
-                    "/api/auth/seed-admin", // One-time setup, no CSRF token on first visit
+                    "/api/auth/login",          // Login has no CSRF token yet
+                    "/api/auth/register",       // Registration has no CSRF token yet
+                    "/api/auth/refresh",        // Refresh uses cookie, not form
+                    "/api/auth/logout",         // Logout uses raw axios, no CSRF token
+                    "/api/auth/seed-admin",     // One-time setup, no CSRF token on first visit
+                    "/api/auth/forgot-password", // Anonymous flow — no session/cookie to protect
+                    "/api/auth/reset-password",  // Anonymous flow — security comes from emailed token
                     "/api/contact",          // Public contact form — no session to protect
                     "/api/webhooks/**"      // Razorpay webhooks
                 )
@@ -188,28 +199,31 @@ public class SecurityConfig {
      * NOTE: returning a FilterRegistrationBean[] bean does NOT work — Spring Boot
      * only collects individual RegistrationBean beans, so each filter needs its own.
      */
+    // Each filter needs its OWN bean (Spring Boot only collects individual
+    // RegistrationBean beans — an array or list bean is silently ignored), so
+    // the three beans share this helper.
+    private <T extends jakarta.servlet.Filter> FilterRegistrationBean<T> disabledRegistration(T filter) {
+        FilterRegistrationBean<T> bean = new FilterRegistrationBean<>(filter);
+        bean.setEnabled(false);
+        return bean;
+    }
+
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
             JwtAuthenticationFilter filter) {
-        FilterRegistrationBean<JwtAuthenticationFilter> bean = new FilterRegistrationBean<>(filter);
-        bean.setEnabled(false);
-        return bean;
+        return disabledRegistration(filter);
     }
 
     @Bean
     public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(
             RateLimitFilter filter) {
-        FilterRegistrationBean<RateLimitFilter> bean = new FilterRegistrationBean<>(filter);
-        bean.setEnabled(false);
-        return bean;
+        return disabledRegistration(filter);
     }
 
     @Bean
     public FilterRegistrationBean<AccountLockoutFilter> accountLockoutFilterRegistration(
             AccountLockoutFilter filter) {
-        FilterRegistrationBean<AccountLockoutFilter> bean = new FilterRegistrationBean<>(filter);
-        bean.setEnabled(false);
-        return bean;
+        return disabledRegistration(filter);
     }
 
     @Bean
