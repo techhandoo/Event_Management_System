@@ -4,7 +4,6 @@ import com.eventmanager.security.AccountLockoutFilter;
 import com.eventmanager.security.CookieHelper;
 import com.eventmanager.security.JwtAuthenticationFilter;
 import com.eventmanager.security.RateLimitFilter;
-import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +45,12 @@ public class SecurityConfig {
 
     @Value("${app.security.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
+
+    @Value("${app.cookie.secure:true}")
+    private boolean cookieSecure;
+
+    @Value("${app.cookie.same-site:None}")
+    private String cookieSameSite;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                           RateLimitFilter rateLimitFilter,
@@ -119,13 +124,14 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/events/{id:\\d+}/availability").permitAll()
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/api/uptime").permitAll()
+                .requestMatchers("/api/contact").permitAll() // Public contact form
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             // ── Ensure CSRF token is set on every response ─────
-            .addFilterAfter(new CsrfTokenCookieFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(new CsrfTokenCookieFilter(cookieSecure, cookieSameSite), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(accountLockoutFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -137,13 +143,19 @@ public class SecurityConfig {
      * Ensures the CSRF token cookie (XSRF-TOKEN) is set on every response.
      * Spring Security's CookieCsrfTokenRepository only sets it when
      * csrfTokenRepository.loadToken() is called. This filter ensures it's always present.
+     *
+     * Values are passed via constructor — @Value does NOT inject into classes
+     * instantiated with `new` (previously produced a literal "SameSite=null" header
+     * which browsers reject).
      */
-    private class CsrfTokenCookieFilter extends OncePerRequestFilter {
-        @Value("${app.cookie.secure:true}")
-        private boolean cookieSecure;
+    private static class CsrfTokenCookieFilter extends OncePerRequestFilter {
+        private final boolean cookieSecure;
+        private final String cookieSameSite;
 
-        @Value("${app.cookie.same-site:None}")
-        private String cookieSameSite;
+        CsrfTokenCookieFilter(boolean cookieSecure, String cookieSameSite) {
+            this.cookieSecure = cookieSecure;
+            this.cookieSameSite = cookieSameSite;
+        }
 
         @Override
         protected void doFilterInternal(HttpServletRequest request,
@@ -165,22 +177,39 @@ public class SecurityConfig {
     }
 
     /**
-     * Disable auto-registration of security filters as servlet filters.
+     * Disable auto-registration of the security filters as GLOBAL servlet filters.
+     *
+     * CRITICAL: if these @Component filters are auto-registered, they run OUTSIDE
+     * Spring Security's FilterChainProxy. The global run authenticates the request,
+     * then the security chain clears the stateless SecurityContext and skips its own
+     * copy of the filter (OncePerRequestFilter "already filtered" attribute) — so
+     * EVERY authenticated request is rejected with 401.
+     *
+     * NOTE: returning a FilterRegistrationBean[] bean does NOT work — Spring Boot
+     * only collects individual RegistrationBean beans, so each filter needs its own.
      */
     @Bean
-    public FilterRegistrationBean<Filter>[] disableFilterAutoRegistration(
-            JwtAuthenticationFilter jwt,
-            RateLimitFilter rateLimit,
-            AccountLockoutFilter lockout) {
-        @SuppressWarnings("unchecked")
-        FilterRegistrationBean<Filter>[] beans = new FilterRegistrationBean[3];
-        int i = 0;
-        for (Filter filter : new Filter[]{jwt, rateLimit, lockout}) {
-            FilterRegistrationBean<Filter> bean = new FilterRegistrationBean<>(filter);
-            bean.setEnabled(false);
-            beans[i++] = bean;
-        }
-        return beans;
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
+            JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> bean = new FilterRegistrationBean<>(filter);
+        bean.setEnabled(false);
+        return bean;
+    }
+
+    @Bean
+    public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(
+            RateLimitFilter filter) {
+        FilterRegistrationBean<RateLimitFilter> bean = new FilterRegistrationBean<>(filter);
+        bean.setEnabled(false);
+        return bean;
+    }
+
+    @Bean
+    public FilterRegistrationBean<AccountLockoutFilter> accountLockoutFilterRegistration(
+            AccountLockoutFilter filter) {
+        FilterRegistrationBean<AccountLockoutFilter> bean = new FilterRegistrationBean<>(filter);
+        bean.setEnabled(false);
+        return bean;
     }
 
     @Bean

@@ -98,6 +98,9 @@ app:
       connect-src: "${CSP_CONNECT_SRC:https://eventry-api.onrender.com https://*.razorpay.com}"
     cors:
       allowed-origins: "${CORS_ALLOWED_ORIGINS:https://eventry.vercel.app,https://event-management-system-five-mauve.vercel.app}"
+  cookie:
+    secure: true          # HTTPS only
+    same-site: None       # Cross-origin (Vercel frontend → Render backend) requires None
 
 logging:
   level:
