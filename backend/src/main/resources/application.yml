@@ -35,7 +35,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # Dialect auto-detected from the JDBC URL — explicit setting only adds boot warnings
         jdbc:
           batch_size: 30
           batch_versioned_data: true
@@ -106,7 +106,7 @@ app:
     frontend-url: ${FRONTEND_URL:http://localhost:5173}
   security:
     csp:
-      connect-src: "http://localhost:5173 http://localhost:3000 https://eventry-api.onrender.com https://api.razorpay.com"
+      connect-src: "http://localhost:5173 http://localhost:3000 https://eventry-api.onrender.com https://*.razorpay.com"
     cors:
       allowed-origins: "http://localhost:5173,http://localhost:3000,https://event-management-system-five-mauve.vercel.app,https://eventry.vercel.app"
   cookie:

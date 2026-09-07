@@ -37,6 +37,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final int LOGIN_LIMIT = 5;
     private static final int REGISTER_LIMIT = 3;
     private static final int FORGOT_LIMIT = 2;
+    private static final int CONTACT_LIMIT = 3;
     private static final long WINDOW_MS = 60_000;
     private static final long CLEANUP_INTERVAL_MS = 300_000;
 
@@ -76,6 +77,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (path.contains("/auth/login")) return LOGIN_LIMIT;
         if (path.contains("/auth/register")) return REGISTER_LIMIT;
         if (path.contains("/auth/forgot-password")) return FORGOT_LIMIT;
+        if (path.contains("/contact")) return CONTACT_LIMIT;
         return null;
     }
 
