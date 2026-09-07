@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -50,6 +51,7 @@ public class EventController {
     }
 
     @GetMapping("/my/stats")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<ApiResponse<OrganizerStatsResponse>> getMyStats(
             @AuthenticationPrincipal UserDetails userDetails) {
         OrganizerStatsResponse stats = eventService.getOrganizerStats(userDetails.getUsername());
@@ -57,6 +59,7 @@ public class EventController {
     }
 
     @GetMapping("/my")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<ApiResponse<Page<EventResponse>>> getMyEvents(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(defaultValue = "0") int page,
@@ -67,6 +70,7 @@ public class EventController {
     }
 
     @PutMapping("/{id}/publish")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<ApiResponse<EventResponse>> publishEvent(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -87,6 +91,7 @@ public class EventController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<ApiResponse<EventResponse>> createEvent(
             @Valid @RequestBody CreateEventRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -96,6 +101,7 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<ApiResponse<EventResponse>> updateEvent(
             @PathVariable Long id,
             @Valid @RequestBody UpdateEventRequest request,
@@ -105,6 +111,7 @@ public class EventController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ORGANIZER')")
     public ResponseEntity<ApiResponse<Void>> deleteEvent(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
