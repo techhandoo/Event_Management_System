@@ -1,15 +1,18 @@
 package com.eventmanager.security;
 
+import com.eventmanager.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 import jakarta.servlet.http.Cookie;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -30,10 +33,27 @@ import static org.junit.jupiter.api.Assertions.fail;
 class CsrfCookiePatternTest {
 
     private static CsrfFilter rawHandlerFilter() {
-        CsrfFilter filter = new CsrfFilter(CookieCsrfTokenRepository.withHttpOnlyFalse());
-        // SecurityConfig pins this handler — keep in sync with SecurityConfig.filterChain()
+        // Mirror SecurityConfig.filterChain() exactly: non-writing repository + raw-token handler.
+        CsrfFilter filter = new CsrfFilter(SecurityConfig.nonWritingCsrfTokenRepository());
         filter.setRequestHandler(new CsrfTokenRequestAttributeHandler());
         return filter;
+    }
+
+    @Test
+    void repositoryNeverWritesItsOwnCookie() throws Exception {
+        // SINGLE-WRITER contract: the repository only reads/generates the token.
+        // If it also wrote a cookie, the response would carry TWO competing
+        // XSRF-TOKEN Set-Cookie headers (one without SameSite => Lax-equivalent,
+        // dropped by browsers on cross-origin POSTs), breaking every mutation.
+        CsrfTokenRepository repo = SecurityConfig.nonWritingCsrfTokenRepository();
+        CsrfToken token = repo.generateToken(new MockHttpServletRequest());
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        repo.saveToken(token, new MockHttpServletRequest(), response);
+
+        for (String header : response.getHeaders("Set-Cookie")) {
+            assertFalse(header.startsWith("XSRF-TOKEN"),
+                    "repository must not write a competing XSRF-TOKEN cookie: " + header);
+        }
     }
 
     @Test
