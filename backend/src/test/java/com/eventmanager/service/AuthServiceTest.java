@@ -12,6 +12,7 @@ import com.eventmanager.security.TokenBlacklist;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -74,8 +75,57 @@ class AuthServiceTest {
         assertEquals("access-token", result.accessToken());
         assertEquals("refresh-token", result.refreshToken());
         assertNotNull(result.user());
-        verify(userRepository).save(any(User.class));
+
+        // Default role (no role sent): ATTENDEE.
+        ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(savedUser.capture());
+        assertEquals(Role.ATTENDEE, savedUser.getValue().getRole());
         verifyNoInteractions(authenticationManager);
+    }
+
+    @Test
+    void registerWithOrganizerRoleIsHonored() {
+        // The signup page offers an Organizer option — self-serve ORGANIZER
+        // signup is intended product behavior, not an escalation.
+        registerRequest.setRole("ORGANIZER");
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("Password1!")).thenReturn("$2a$12$encoded");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(tokenProvider.generateAccessToken("test@example.com")).thenReturn("access-token");
+        when(tokenProvider.generateRefreshToken("test@example.com")).thenReturn("refresh-token");
+        when(userMapper.toResponse(any(User.class))).thenReturn(
+                com.eventmanager.dto.response.UserResponse.builder()
+                        .id(1L).email("test@example.com").fullName("Test User").role(Role.ORGANIZER).build());
+
+        var result = authService.registerWithTokens(registerRequest);
+
+        ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(savedUser.capture());
+        assertEquals(Role.ORGANIZER, savedUser.getValue().getRole(),
+                "self-registration as ORGANIZER must be honored");
+        assertEquals(Role.ORGANIZER, result.user().getRole());
+    }
+
+    @Test
+    void registerWithAdminRoleIsDowngradedToAttendee() {
+        // Security boundary: ADMIN must never be self-assignable.
+        registerRequest.setRole("ADMIN");
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("Password1!")).thenReturn("$2a$12$encoded");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(tokenProvider.generateAccessToken("test@example.com")).thenReturn("access-token");
+        when(tokenProvider.generateRefreshToken("test@example.com")).thenReturn("refresh-token");
+        when(userMapper.toResponse(any(User.class))).thenReturn(
+                com.eventmanager.dto.response.UserResponse.builder()
+                        .id(1L).email("test@example.com").fullName("Test User").role(Role.ATTENDEE).build());
+
+        var result = authService.registerWithTokens(registerRequest);
+
+        ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(savedUser.capture());
+        assertEquals(Role.ATTENDEE, savedUser.getValue().getRole(),
+                "ADMIN must never be granted via self-registration");
+        assertEquals(Role.ATTENDEE, result.user().getRole());
     }
 
     @Test

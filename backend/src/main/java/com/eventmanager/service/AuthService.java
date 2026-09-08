@@ -61,6 +61,11 @@ public class AuthService {
             throw new DuplicateResourceException("Email already registered: " + request.getEmail());
         }
 
+        // Public self-registration may choose ATTENDEE or ORGANIZER — the
+        // signup page offers both ("Create and manage events"). The one role
+        // that must NEVER be self-assignable is ADMIN: any other value
+        // (including ADMIN) is downgraded to ATTENDEE. Admin elevation is
+        // admin-only via AdminController (PUT /api/admin/users/{userId}/role).
         Role role = Role.ATTENDEE;
         if (request.getRole() != null) {
             try {

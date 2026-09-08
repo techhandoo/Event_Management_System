@@ -23,6 +23,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -92,7 +93,7 @@ public class SecurityConfig {
                     "/api/contact",          // Public contact form — no session to protect
                     "/api/webhooks/**"      // Razorpay webhooks
                 )
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRepository(csrfTokenRepository())
             )
             // ── Headers ────────────────────────────────────────
             .headers(headers -> headers
@@ -224,6 +225,51 @@ public class SecurityConfig {
     public FilterRegistrationBean<AccountLockoutFilter> accountLockoutFilterRegistration(
             AccountLockoutFilter filter) {
         return disabledRegistration(filter);
+    }
+
+    /**
+     * CSRF repository for the SPA double-submit pattern.
+     *
+     * It only READS the XSRF-TOKEN cookie (to validate the X-XSRF-TOKEN header)
+     * and GENERATES new tokens — it deliberately does NOT write its own cookie.
+     *
+     * Why: CookieCsrfTokenRepository's default writer emits a second XSRF-TOKEN
+     * Set-Cookie WITHOUT SameSite (=> Lax-equivalent), which browsers drop on
+     * cross-origin POSTs. Two competing Set-Cookie headers for the same cookie
+     * made behavior browser-dependent — this was the root cause of "every
+     * mutation returns 403 in the browser while curl passes".
+     * CsrfTokenCookieFilter is the SINGLE writer, emitting the cookie with
+     * SameSite=None; Secure; Path=/ (matching the auth cookies).
+     *
+     * Note: CookieCsrfTokenRepository is FINAL in Spring Security 6.2, so this
+     * delegates to an instance behind the CsrfTokenRepository interface instead
+     * of subclassing it.
+     */
+    @Bean
+    public CsrfTokenRepository csrfTokenRepository() {
+        return nonWritingCsrfTokenRepository();
+    }
+
+    public static CsrfTokenRepository nonWritingCsrfTokenRepository() {
+        CookieCsrfTokenRepository delegate = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        return new CsrfTokenRepository() {
+            @Override
+            public CsrfToken generateToken(HttpServletRequest request) {
+                return delegate.generateToken(request);
+            }
+
+            @Override
+            public void saveToken(CsrfToken token,
+                                  HttpServletRequest request,
+                                  HttpServletResponse response) {
+                // no-op — the XSRF-TOKEN cookie is written solely by CsrfTokenCookieFilter
+            }
+
+            @Override
+            public CsrfToken loadToken(HttpServletRequest request) {
+                return delegate.loadToken(request);
+            }
+        };
     }
 
     @Bean

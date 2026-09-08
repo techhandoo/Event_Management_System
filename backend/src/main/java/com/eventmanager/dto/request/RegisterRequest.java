@@ -28,6 +28,10 @@ public class RegisterRequest {
     @Size(min = 2, max = 100, message = "Full name must be between 2 and 100 characters")
     private String fullName;
 
-    /** Role: ATTENDEE or ORGANIZER. ADMIN cannot be self-registered. */
+    /**
+     * Optional role on signup: ATTENDEE or ORGANIZER (the self-serve signup
+     * page offers both). ADMIN is never accepted — AuthService downgrades any
+     * other value (including ADMIN) to ATTENDEE.
+     */
     private String role;
 }
