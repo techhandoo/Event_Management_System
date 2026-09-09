@@ -54,7 +54,12 @@ public class PaymentService {
         this.razorpayKeySecret = razorpayKeySecret;
     }
 
-    @Transactional
+    // rollbackFor=Exception.class: RazorpayException is a CHECKED exception, and
+    // Spring's default rollback policy only rolls back on RuntimeException/Error.
+    // Without this, a failed Razorpay order leaves the PENDING booking and the
+    // capacity increment committed — the attendee is then permanently blocked
+    // from booking that event ("already have an active booking").
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> createOrder(Long eventId, int quantity, String userEmail)
             throws RazorpayException {
 

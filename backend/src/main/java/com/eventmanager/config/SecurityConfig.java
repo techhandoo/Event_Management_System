@@ -183,6 +183,10 @@ public class SecurityConfig {
                         + "; Path=/; SameSite=" + cookieSameSite;
                 if (cookieSecure) header += "; Secure";
                 response.addHeader("Set-Cookie", header);
+                
+                // Expose the token as a custom header so cross-origin frontends can read it
+                // (since they cannot read document.cookie across different domains)
+                response.setHeader("XSRF-TOKEN", csrfToken.getToken());
             }
             filterChain.doFilter(request, response);
         }

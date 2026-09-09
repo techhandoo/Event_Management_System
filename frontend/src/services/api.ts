@@ -46,7 +46,13 @@ async function refreshAccessToken(): Promise<void> {
 }
 
 // ─── CSRF token helper ────────────────────────────────
+let csrfTokenMemory: string | null = null;
+
 function getCsrfToken(): string | null {
+  // Cross-origin: read from memory (populated by response interceptor)
+  if (csrfTokenMemory) return csrfTokenMemory;
+
+  // Same-origin / local dev fallback: read from cookie
   const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
@@ -74,6 +80,11 @@ api.interceptors.request.use(
 // ─── Response interceptor ─────────────────────────────
 api.interceptors.response.use(
   (response) => {
+    // Intercept CSRF token from custom header for cross-origin environments
+    if (response.headers && response.headers['xsrf-token']) {
+      csrfTokenMemory = response.headers['xsrf-token'];
+    }
+
     pendingRequests = Math.max(0, pendingRequests - 1);
     if (pendingRequests === 0 && coldStartToastId) {
       toast.dismiss(coldStartToastId);

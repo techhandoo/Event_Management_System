@@ -37,9 +37,9 @@ public class AuthController {
     private long refreshTokenExpirationMs;
 
     public AuthController(AuthService authService,
-                          CookieHelper cookieHelper,
-                          JwtTokenProvider tokenProvider,
-                          AuditLogger auditLogger) {
+            CookieHelper cookieHelper,
+            JwtTokenProvider tokenProvider,
+            AuditLogger auditLogger) {
         this.authService = authService;
         this.cookieHelper = cookieHelper;
         this.tokenProvider = tokenProvider;
