@@ -27,9 +27,26 @@ public class EmailService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     /**
+     * Dummy mode: when RESEND_API_KEY is unset (or the dev placeholder), emails
+     * are NOT sent — reset links and contact messages are logged to the server
+     * logs instead, so the flows remain completable without an email provider.
+     * DEV/DEMO ONLY — set RESEND_API_KEY before real users sign up.
+     */
+    private boolean isEmailEnabled() {
+        return resendApiKey != null
+                && !resendApiKey.isBlank()
+                && !"re_placeholder".equals(resendApiKey);
+    }
+
+    /**
      * Sends a contact-form message to the platform owner.
      */
     public void sendContactEmail(String name, String fromEmail, String subject, String message) {
+        if (!isEmailEnabled()) {
+            log.warn("[DUMMY EMAIL MODE] Contact message NOT emailed (RESEND_API_KEY not set) — from {} <{}>: [{}] {}",
+                    name, fromEmail, subject, message);
+            return;
+        }
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -75,6 +92,13 @@ public class EmailService {
 
     public void sendPasswordResetEmail(String toEmail, String resetToken) {
         String resetUrl = frontendUrl + "/reset-password?token=" + resetToken;
+
+        if (!isEmailEnabled()) {
+            // Dummy mode: surface the one-hour reset link in the server logs so
+            // forgot-password is still completable without an email provider.
+            log.warn("[DUMMY EMAIL MODE] Reset link for {} (expires in 1h): {}", toEmail, resetUrl);
+            return;
+        }
 
         String htmlBody = buildPasswordResetHtml(resetUrl);
 

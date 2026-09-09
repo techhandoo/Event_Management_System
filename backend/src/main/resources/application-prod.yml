@@ -92,7 +92,7 @@ app:
   email:
     resend-api-key: ${RESEND_API_KEY:}
     from-address: ${EMAIL_FROM:noreply@eventry.app}
-    frontend-url: ${FRONTEND_URL:https://eventry.vercel.app}
+    frontend-url: ${FRONTEND_URL:https://event-management-system-five-mauve.vercel.app}  # NOT eventry.vercel.app — that domain is an unrelated app
   security:
     csp:
       connect-src: "${CSP_CONNECT_SRC:https://eventry-api.onrender.com https://*.razorpay.com}"

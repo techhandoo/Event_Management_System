@@ -5,31 +5,36 @@ import { AuthProvider, useAuth, homeForRole } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
 import DashboardLayout from './components/DashboardLayout';
 import { PageLoader } from './components/ui/LoadingState';
+import { lazy, Suspense, ReactNode } from 'react';
+
+// ─── Route-level code splitting ───────────────────────
+// Entry pages (landing, auth, event browse) load eagerly; everything else is
+// split into per-route chunks so the initial bundle stays small.
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import AdminSetupPage from './pages/AdminSetupPage';
 import EventsPageWrapper from './components/EventsPageWrapper';
 import EventDetailPageWrapper from './components/EventDetailPageWrapper';
-import MyBookingsPage from './pages/MyBookingsPage';
-import DashboardPage from './pages/DashboardPage';
-import OrganizerDashboardPage from './pages/OrganizerDashboardPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import CreateEventPage from './pages/CreateEventPage';
-import EditEventPage from './pages/EditEventPage';
-import ProfilePage from './pages/ProfilePage';
-import ErrorPage from './pages/ErrorPage';
-import AboutPage from './pages/static/AboutPage';
-import BlogPage from './pages/static/BlogPage';
-import CareersPage from './pages/static/CareersPage';
-import ContactPage from './pages/static/ContactPage';
-import PrivacyPage from './pages/static/PrivacyPage';
-import TermsPage from './pages/static/TermsPage';
-import CookiesPage from './pages/static/CookiesPage';
-import ApiDocsPage from './pages/static/ApiDocsPage';
-import { ReactNode } from 'react';
+
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const AdminSetupPage = lazy(() => import('./pages/AdminSetupPage'));
+const MyBookingsPage = lazy(() => import('./pages/MyBookingsPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const OrganizerDashboardPage = lazy(() => import('./pages/OrganizerDashboardPage'));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+const CreateEventPage = lazy(() => import('./pages/CreateEventPage'));
+const EditEventPage = lazy(() => import('./pages/EditEventPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const ErrorPage = lazy(() => import('./pages/ErrorPage'));
+const AboutPage = lazy(() => import('./pages/static/AboutPage'));
+const BlogPage = lazy(() => import('./pages/static/BlogPage'));
+const CareersPage = lazy(() => import('./pages/static/CareersPage'));
+const ContactPage = lazy(() => import('./pages/static/ContactPage'));
+const PrivacyPage = lazy(() => import('./pages/static/PrivacyPage'));
+const TermsPage = lazy(() => import('./pages/static/TermsPage'));
+const CookiesPage = lazy(() => import('./pages/static/CookiesPage'));
+const ApiDocsPage = lazy(() => import('./pages/static/ApiDocsPage'));
 
 function ProtectedRoute({ children, roles }: { children: ReactNode; roles?: string[] }) {
  const { user, isAuthenticated, isLoading } = useAuth();
@@ -59,7 +64,8 @@ function AnimatedRoutes() {
     exit={{ opacity: 0 }}
     transition={{ duration: 0.12 }}
    >
-    <Routes location={location}>
+    <Suspense fallback={<PageLoader />}>
+     <Routes location={location}>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
@@ -87,7 +93,8 @@ function AnimatedRoutes() {
       <Route path="/403" element={<ErrorPage code={403} />} />
       <Route path="/500" element={<ErrorPage code={500} />} />
       <Route path="*" element={<ErrorPage code={404} />} />
-    </Routes>
+     </Routes>
+    </Suspense>
    </motion.div>
   </AnimatePresence>
  );
