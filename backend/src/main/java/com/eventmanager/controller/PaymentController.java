@@ -16,9 +16,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * Registered as a bean in {@link com.eventmanager.config.RazorpayConfig}
- * only when Razorpay is configured. Not component-scanned.
+ * Handles Razorpay payment endpoints. Auto-discovered by Spring via @RestController.
+ * Routes only respond when Razorpay is configured (PaymentService checks RazorpayClient).
  */
+@RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
 

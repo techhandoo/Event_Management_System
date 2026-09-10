@@ -1,18 +1,21 @@
 package com.eventmanager.config;
 
-import com.eventmanager.controller.PaymentController;
-import com.eventmanager.mapper.BookingMapper;
-import com.eventmanager.repository.BookingRepository;
-import com.eventmanager.repository.EventRepository;
-import com.eventmanager.repository.UserRepository;
-import com.eventmanager.service.BookingService;
-import com.eventmanager.service.PaymentService;
 import com.razorpay.RazorpayClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Creates the RazorpayClient bean only when Razorpay keys are configured.
+ *
+ * PaymentService and PaymentController are now Spring-managed (@Service and
+ * @RestController respectively) — they are auto-discovered by component
+ * scanning and do NOT need manual bean creation here.
+ *
+ * This class only provides the RazorpayClient, which is injected into
+ * PaymentService via @Autowired.
+ */
 @Configuration
 @ConditionalOnProperty(name = "razorpay.key.id")
 public class RazorpayConfig {
@@ -26,21 +29,5 @@ public class RazorpayConfig {
     @Bean
     public RazorpayClient razorpayClient() throws Exception {
         return new RazorpayClient(keyId, keySecret);
-    }
-
-    @Bean
-    public PaymentService paymentService(RazorpayClient razorpayClient,
-                                          BookingRepository bookingRepository,
-                                          EventRepository eventRepository,
-                                          UserRepository userRepository,
-                                          BookingService bookingService) {
-        return new PaymentService(razorpayClient, bookingRepository, eventRepository,
-                userRepository, bookingService, keyId, keySecret);
-    }
-
-    @Bean
-    public PaymentController paymentController(PaymentService paymentService,
-                                               BookingMapper bookingMapper) {
-        return new PaymentController(paymentService, bookingMapper);
     }
 }
