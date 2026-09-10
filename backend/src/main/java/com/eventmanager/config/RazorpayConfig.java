@@ -10,7 +10,6 @@ import com.eventmanager.service.PaymentService;
 import com.razorpay.RazorpayClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,10 +33,9 @@ public class RazorpayConfig {
                                           BookingRepository bookingRepository,
                                           EventRepository eventRepository,
                                           UserRepository userRepository,
-                                          BookingService bookingService,
-                                          CacheManager cacheManager) {
+                                          BookingService bookingService) {
         return new PaymentService(razorpayClient, bookingRepository, eventRepository,
-                userRepository, bookingService, cacheManager, keyId, keySecret);
+                userRepository, bookingService, keyId, keySecret);
     }
 
     @Bean
