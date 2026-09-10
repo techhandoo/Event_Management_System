@@ -9,7 +9,11 @@ import com.eventmanager.exception.ResourceNotFoundException;
 import com.eventmanager.mapper.UserMapper;
 import com.eventmanager.model.User;
 import com.eventmanager.repository.UserRepository;
+import com.eventmanager.security.CookieHelper;
+import com.eventmanager.security.JwtTokenProvider;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,11 +27,23 @@ public class UserController {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider tokenProvider;
+    private final CookieHelper cookieHelper;
 
-    public UserController(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
+    @Value("${app.jwt.access-token-expiration-ms:900000}")
+    private long accessTokenExpirationMs;
+
+    @Value("${app.jwt.refresh-token-expiration-ms:604800000}")
+    private long refreshTokenExpirationMs;
+
+    public UserController(UserRepository userRepository, UserMapper userMapper,
+                          PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider,
+                          CookieHelper cookieHelper) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
+        this.tokenProvider = tokenProvider;
+        this.cookieHelper = cookieHelper;
     }
 
     @GetMapping("/me")
@@ -56,7 +72,8 @@ public class UserController {
     @PutMapping("/me/email")
     public ResponseEntity<ApiResponse<String>> changeEmail(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody ChangeEmailRequest request) {
+            @Valid @RequestBody ChangeEmailRequest request,
+            HttpServletResponse response) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", userDetails.getUsername()));
 
@@ -70,9 +87,21 @@ public class UserController {
             throw new IllegalArgumentException("Email is already in use");
         }
 
-        user.setEmail(request.getNewEmail());
+        String newEmail = request.getNewEmail();
+        user.setEmail(newEmail);
         userRepository.save(user);
-        return ResponseEntity.ok(ApiResponse.success("Email updated successfully. Please log in again with your new email."));
+
+        // Issue new tokens with the new email and set cookies — otherwise the
+        // old JWT still carries the old email and the app enters a refresh loop
+        // once the access token expires.
+        String accessToken = tokenProvider.generateAccessToken(newEmail);
+        String refreshToken = tokenProvider.generateRefreshToken(newEmail);
+        long accessMaxAge = accessTokenExpirationMs / 1000;
+        long refreshMaxAge = refreshTokenExpirationMs / 1000;
+        cookieHelper.setAccessTokenCookie(response, accessToken, accessMaxAge);
+        cookieHelper.setRefreshTokenCookie(response, refreshToken, refreshMaxAge);
+
+        return ResponseEntity.ok(ApiResponse.success("Email updated successfully"));
     }
 
     @PutMapping("/me/password")

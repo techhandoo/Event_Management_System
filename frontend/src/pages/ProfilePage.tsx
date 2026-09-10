@@ -63,7 +63,7 @@ export default function ProfilePage() {
   setSavingEmail(true);
   try {
    await api.put('/users/me/email', { newEmail: newEmail.trim(), password: emailPassword });
-   toast.success('Email updated! Please log in with your new email.');
+   toast.success('Email updated successfully!');
    setNewEmail('');
    setEmailPassword('');
   } catch (err: any) {

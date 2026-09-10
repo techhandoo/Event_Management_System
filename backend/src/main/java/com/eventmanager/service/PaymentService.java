@@ -13,6 +13,9 @@ import com.razorpay.RazorpayException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Mac;
@@ -20,8 +23,21 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.Optional;
 
+/**
+ * Handles Razorpay payment flows (create order + verify payment).
+ *
+ * This is a Spring-managed @Service so that @Transactional actually works.
+ * Previously it was manually constructed in RazorpayConfig, which meant
+ * Spring AOP proxies were never applied — the @Transactional annotation
+ * was dead code, and a failed Razorpay call would leave a PENDING booking
+ * committed with incremented capacity (data-corruption bug).
+ *
+ * RazorpayClient is optional: when Razorpay keys are not configured,
+ * this service still exists (so PaymentController routes respond with
+ * a clear error) but createOrder/verifyPayment throw immediately.
+ */
+@Service
 public class PaymentService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
@@ -34,14 +50,15 @@ public class PaymentService {
     private final String razorpayKeyId;
     private final String razorpayKeySecret;
 
+    @Autowired
     public PaymentService(
             RazorpayClient razorpayClient,
             BookingRepository bookingRepository,
             EventRepository eventRepository,
             UserRepository userRepository,
             BookingService bookingService,
-            String razorpayKeyId,
-            String razorpayKeySecret) {
+            @Value("${razorpay.key-id:}") String razorpayKeyId,
+            @Value("${razorpay.key-secret:}") String razorpayKeySecret) {
         this.razorpayClient = razorpayClient;
         this.bookingRepository = bookingRepository;
         this.eventRepository = eventRepository;
