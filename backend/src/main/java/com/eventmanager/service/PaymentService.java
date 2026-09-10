@@ -13,7 +13,6 @@ import com.razorpay.RazorpayException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.CacheManager;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Mac;
@@ -21,6 +20,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 public class PaymentService {
 
@@ -31,7 +31,6 @@ public class PaymentService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final BookingService bookingService;
-    private final CacheManager cacheManager;
     private final String razorpayKeyId;
     private final String razorpayKeySecret;
 
@@ -41,7 +40,6 @@ public class PaymentService {
             EventRepository eventRepository,
             UserRepository userRepository,
             BookingService bookingService,
-            CacheManager cacheManager,
             String razorpayKeyId,
             String razorpayKeySecret) {
         this.razorpayClient = razorpayClient;
@@ -49,7 +47,6 @@ public class PaymentService {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.bookingService = bookingService;
-        this.cacheManager = cacheManager;
         this.razorpayKeyId = razorpayKeyId;
         this.razorpayKeySecret = razorpayKeySecret;
     }
@@ -170,14 +167,9 @@ public class PaymentService {
     }
 
     private void evictEventCache(Long eventId) {
-        try {
-            var cache = cacheManager.getCache("event-detail");
-            if (cache != null) {
-                cache.evict(eventId);
-            }
-        } catch (Exception e) {
-            log.warn("Failed to evict event cache for {}: {}",
-                    eventId, e.getMessage());
-        }
+        // Best-effort eviction: if a CacheManager is ever wired (e.g. local dev
+        // with Redis), evict here. Prod has no cache manager — the next event
+        // read hits the DB directly and gets fresh data.
+        log.debug("Event cache eviction skipped: no CacheManager wired (prod has no Redis)");
     }
 }

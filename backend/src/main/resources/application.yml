@@ -101,14 +101,14 @@ app:
     token-prefix: "Bearer "
     authorization-header: "Authorization"
   email:
-    resend-api-key: ${RESEND_API_KEY:re_placeholder}
+    resend-api-key: ${RESEND_API_KEY:}
     from-address: ${EMAIL_FROM:noreply@eventry.app}
     frontend-url: ${FRONTEND_URL:http://localhost:5173}
   security:
     csp:
       connect-src: "http://localhost:5173 http://localhost:3000 https://eventry-api.onrender.com https://*.razorpay.com"
     cors:
-      allowed-origins: "http://localhost:5173,http://localhost:3000,https://event-management-system-five-mauve.vercel.app,https://eventry.vercel.app"
+      allowed-origins: "http://localhost:5173,http://localhost:3000,https://event-management-system-five-mauve.vercel.app,https://*.onrender.com"
   cookie:
     secure: true
     same-site: None  # Required for cross-origin (Vercel frontend → Render backend)
