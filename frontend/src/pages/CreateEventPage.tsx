@@ -84,6 +84,8 @@ export default function CreateEventPage() {
 
   if (form.priceCents && parseFloat(form.priceCents) < 0) {
    e.priceCents = 'Price cannot be negative — enter 0 for free events';
+  } else if (form.priceCents && parseFloat(form.priceCents) > 0 && parseFloat(form.priceCents) < 1) {
+   e.priceCents = 'Minimum paid price is ₹1 — enter 0 for free events';
   }
 
   if (form.imageUrl && !form.imageUrl.startsWith('http')) {
@@ -292,7 +294,7 @@ export default function CreateEventPage() {
        </div>
        <div>
         <label className="form-label">
-         <DollarSign size={13} /> Ticket price (USD)
+         <DollarSign size={13} /> Ticket price (₹ INR)
         </label>
         <input
          type="number" name="priceCents" value={form.priceCents} onChange={set}
@@ -300,7 +302,7 @@ export default function CreateEventPage() {
          min="0" step="0.01" className={`input ${errors.priceCents && touched.priceCents ? 'border-red-500/50' : ''}`}
          placeholder="0.00 = free event"
         />
-        <FieldHelp field="priceCents" hint="Enter 0 or leave blank for free events. E.g. 29.99 for a $29.99 ticket." />
+        <FieldHelp field="priceCents" hint="Enter 0 or leave blank for free events. Paid tickets must be ₹1 or more (charged in INR via Razorpay). E.g. 299 for a ₹299 ticket." />
        </div>
       </div>
       <div>
@@ -350,8 +352,7 @@ export default function CreateEventPage() {
       <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-xs text-surface-500">
        {form.city && <span>📍 {form.city}</span>}
        {form.startTime && <span>📅 {new Date(form.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>}
-       {form.capacity && <span>👥 {parseInt(form.capacity).toLocaleString()} seats</span>}
-       {form.priceCents ? <span>💰 ${parseFloat(form.priceCents).toFixed(2)}</span> : form.priceCents === '0' ? <span className="text-emerald-500">🆓 Free</span> : null}
+       {form.capacity && <span>👥 {parseInt(form.capacity).toLocaleString()} seats</span>}        {form.priceCents ? <span>💰 ₹{parseFloat(form.priceCents).toFixed(2)}</span> : form.priceCents === '0' ? <span className="text-emerald-500">🆓 Free</span> : null}
        {form.category && <span className="px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400">{form.category}</span>}
       </div>
      </div>

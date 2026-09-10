@@ -15,40 +15,41 @@ import com.eventmanager.repository.BookingRepository;
 import com.eventmanager.repository.EventRepository;
 import com.eventmanager.repository.UserRepository;
 import com.eventmanager.security.InputSanitizer;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Business logic for events: CRUD, publish, search.
+ */
 @Service
+@RequiredArgsConstructor
 public class EventService {
+
+    /**
+     * Razorpay rejects payment orders below ₹1 (100 paise), so any paid event
+     * priced lower would fail at checkout with a misleading "payment gateway
+     * error". Enforce the minimum at event create/update instead.
+     */
+    public static final long MIN_PAID_PRICE_CENTS = 100;
 
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
-    private final EventMapper eventMapper;
     private final BookingRepository bookingRepository;
+    private final EventMapper eventMapper;
     private final InputSanitizer inputSanitizer;
+
     @Autowired(required = false)
     private EventEventProducer eventEventProducer;
 
-    public EventService(EventRepository eventRepository,
-                        UserRepository userRepository,
-                        EventMapper eventMapper,
-                        BookingRepository bookingRepository,
-                        InputSanitizer inputSanitizer) {
-        this.eventRepository = eventRepository;
-        this.userRepository = userRepository;
-        this.eventMapper = eventMapper;
-        this.bookingRepository = bookingRepository;
-        this.inputSanitizer = inputSanitizer;
-    }
-
     @Transactional
     public EventResponse createEvent(CreateEventRequest request, String organizerEmail) {
+        validatePrice(request.getPriceCents());
         User organizer = userRepository.findByEmail(organizerEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", organizerEmail));
 
@@ -118,12 +119,26 @@ public class EventService {
         if (request.getStartTime() != null) event.setStartTime(request.getStartTime());
         if (request.getEndTime() != null) event.setEndTime(request.getEndTime());
         if (request.getCapacity() != null) event.setCapacity(request.getCapacity());
-        if (request.getPriceCents() != null) event.setPriceCents(request.getPriceCents());
+        if (request.getPriceCents() != null) {
+            validatePrice(request.getPriceCents());
+            event.setPriceCents(request.getPriceCents());
+        }
         if (request.getCategory() != null) event.setCategory(request.getCategory());
         if (request.getImageUrl() != null) event.setImageUrl(request.getImageUrl());
 
         event = eventRepository.save(event);
         return eventMapper.toResponse(event);
+    }
+
+    /**
+     * 0 (free) is always allowed; paid events must be at least ₹1
+     * (100 paise) — Razorpay's order-creation minimum.
+     */
+    private void validatePrice(Long priceCents) {
+        if (priceCents != null && priceCents > 0 && priceCents < MIN_PAID_PRICE_CENTS) {
+            throw new IllegalArgumentException(
+                    "Minimum ticket price is ₹1. Enter 0 for a free event, or ₹1 or more for paid tickets.");
+        }
     }
 
     @Caching(evict = {

@@ -46,7 +46,7 @@ export default function EventsPage() {
  useEffect(() => { fetchEvents(); }, [fetchEvents]);
  useEffect(() => { setPage(0); }, [debouncedSearch, cityFilter, categoryFilter]);
 
- const fmt = (c: number) => c === 0 ? 'Free' : `$${(c / 100).toFixed(2)}`;
+ const fmt = (c: number) => c === 0 ? 'Free' : `₹${(c / 100).toFixed(2)}`;
  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
  return (

@@ -42,7 +42,7 @@ export default function AdminDashboardPage() {
   try { await api.put(`/admin/users/${id}/ban`); toast.success('Status toggled'); loadData(); }
   catch { toast.error('Failed'); }
  };
- const fmt = (c: number) => `$${(c / 100).toFixed(2)}`;
+ const fmt = (c: number) => `₹${(c / 100).toFixed(2)}`;
 
  // Chart data — derived from real backend analytics
  const roleBreakdown = [
