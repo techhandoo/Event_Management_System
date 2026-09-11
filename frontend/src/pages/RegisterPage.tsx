@@ -50,7 +50,7 @@ export default function RegisterPage() {
  };
 
  return (
-  <div className="min-h-screen bg-surface-0 flex">
+  <div className="h-dvh overflow-hidden bg-surface-0 flex">
    {/* Brand panel */}
    <motion.div
     initial={{ opacity: 0 }}
@@ -75,11 +75,11 @@ export default function RegisterPage() {
     initial={{ opacity: 0, x: 12 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-    className="flex-1 flex items-center justify-center p-6 sm:p-8"
+    className="flex-1 flex items-center justify-center p-6 sm:p-8 overflow-y-auto"
    >
-    <div className="w-full max-w-md">
-     <div className="mb-8">
-      <Link to="/" className="inline-flex items-center gap-3 mb-10 lg:hidden">
+    <div className="w-full max-w-md my-auto py-2">
+     <div className="mb-6">
+      <Link to="/" className="inline-flex items-center gap-3 mb-6 lg:hidden">
        <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-violet-500 rounded-xl flex items-center justify-center ">
         <Zap className="text-white" size={20} />
        </div>
@@ -159,7 +159,7 @@ export default function RegisterPage() {
       </button>
      </form>
 
-     <p className="text-center mt-8 text-sm text-surface-400">
+     <p className="text-center mt-6 text-sm text-surface-400">
       Already have an account?{' '}
       <Link to="/login" className="text-brand-400 hover:text-brand-300 font-semibold transition-colors">Sign in</Link>
      </p>
