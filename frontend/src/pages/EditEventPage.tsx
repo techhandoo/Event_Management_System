@@ -182,7 +182,7 @@ export default function EditEventPage() {
         {errors.capacity && <p className="form-message">{errors.capacity.message}</p>}
        </div>
        <div className="form-item">
-        <label className="label">Price ($)</label>
+        <label className="label">Price (₹)</label>
         <input type="number" step="0.01" {...register('priceCents', { min: { value: 0, message: 'Cannot be negative' } })}
          className="input" placeholder="0.00 for free" />
        </div>

@@ -84,6 +84,13 @@ public class PaymentService {
         if (totalCents <= 0) {
             throw new IllegalArgumentException("Free events do not require payment");
         }
+        // Razorpay rejects orders below ₹1; without this check the failure would
+        // surface as an opaque "payment gateway error" for legacy sub-₹1 events.
+        if (totalCents < EventService.MIN_PAID_PRICE_CENTS) {
+            throw new IllegalArgumentException(
+                "This event's ticket price is below the ₹1 payment minimum. "
+                + "The organizer must update the price.");
+        }
 
         booking = bookingRepository.save(booking);
 

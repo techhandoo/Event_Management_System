@@ -10,12 +10,15 @@ import org.springframework.context.annotation.Configuration;
  * Creates the RazorpayClient bean only when Razorpay keys are configured.
  *
  * PaymentService and PaymentController are now Spring-managed (@Service and
+ * 
  * @RestController respectively) — they are auto-discovered by component
- * scanning and do NOT need manual bean creation here.
+ *                 scanning and do NOT need manual bean creation here.
  *
- * This class only provides the RazorpayClient, which is injected into
- * PaymentService via @Autowired.
+ *                 This class only provides the RazorpayClient, which is
+ *                 injected into
+ *                 PaymentService via @Autowired.
  */
+
 @Configuration
 @ConditionalOnProperty(name = "razorpay.key.id")
 public class RazorpayConfig {

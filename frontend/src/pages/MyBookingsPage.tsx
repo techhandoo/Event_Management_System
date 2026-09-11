@@ -67,7 +67,7 @@ export default function MyBookingsPage() {
           </td>
           <td className="px-6 text-sm text-surface-600">{b.quantity}</td>
           <td className="px-6 text-sm font-semibold text-surface-800">
-           {b.totalCents === 0 ? 'Free' : `$${(b.totalCents / 100).toFixed(2)}`}
+           {b.totalCents === 0 ? 'Free' : `₹${(b.totalCents / 100).toFixed(2)}`}
           </td>
           <td className="px-6 text-xs text-surface-400 hidden md:table-cell">
            {b.totalCents === 0 ? '—' : b.paymentId ? <span className="text-emerald-500">Paid</span> : <span className="text-amber-500">Pending</span>}

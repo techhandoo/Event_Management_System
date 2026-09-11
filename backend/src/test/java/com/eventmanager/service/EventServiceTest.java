@@ -99,6 +99,48 @@ class EventServiceTest {
                 () -> eventService.createEvent(request, "unknown@example.com"));
     }
 
+    // ── Price validation (Razorpay ₹1 minimum) ──────────
+
+    @Test
+    void createEventWithSubRupeePriceThrows() {
+        CreateEventRequest request = CreateEventRequest.builder()
+                .title("Too Cheap").venue("V").city("C")
+                .startTime(LocalDateTime.now().plusDays(7))
+                .endTime(LocalDateTime.now().plusDays(8))
+                .capacity(10).priceCents(89L).build();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> eventService.createEvent(request, "org@example.com"));
+        verify(eventRepository, never()).save(any(Event.class));
+    }
+
+    @Test
+    void createEventWithFreePriceSucceeds() {
+        CreateEventRequest request = CreateEventRequest.builder()
+                .title("Free Event").venue("V").city("C")
+                .startTime(LocalDateTime.now().plusDays(7))
+                .endTime(LocalDateTime.now().plusDays(8))
+                .capacity(10).priceCents(0L).build();
+
+        when(inputSanitizer.sanitize(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.findByEmail("org@example.com")).thenReturn(Optional.of(organizer));
+        when(eventRepository.save(any(Event.class))).thenReturn(event);
+        when(eventMapper.toResponse(any(Event.class))).thenReturn(
+                EventResponse.builder().id(10L).title("Test Event").build());
+
+        assertDoesNotThrow(() -> eventService.createEvent(request, "org@example.com"));
+    }
+
+    @Test
+    void updateEventWithSubRupeePriceThrows() {
+        UpdateEventRequest request = UpdateEventRequest.builder().priceCents(50L).build();
+        when(eventRepository.findById(10L)).thenReturn(Optional.of(event));
+        when(userRepository.findByEmail("org@example.com")).thenReturn(Optional.of(organizer));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> eventService.updateEvent(10L, request, "org@example.com"));
+    }
+
     // ── Publish Event ──────────────────────────────────────
 
     @Test

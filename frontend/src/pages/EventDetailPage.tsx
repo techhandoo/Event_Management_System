@@ -108,7 +108,7 @@ export default function EventDetailPage() {
  if (loading) return <PageLoader />;
  if (!event) return null;
 
- const fmt = (c: number) => c === 0 ? 'Free' : `$${(c / 100).toFixed(2)}`;
+ const fmt = (c: number) => c === 0 ? 'Free' : `₹${(c / 100).toFixed(2)}`;
  const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
  const capacityPct = event.capacity > 0 ? Math.round(((event.capacity - event.availableCapacity) / event.capacity) * 100) : 0;
 
@@ -198,7 +198,7 @@ export default function EventDetailPage() {
          </select>
         </div>
         <div className="text-lg font-bold text-surface-800 mb-4">
-         Total: {event.priceCents === 0 ? 'Free' : `$${((event.priceCents * quantity) / 100).toFixed(2)}`}
+         Total: {event.priceCents === 0 ? 'Free' : `₹${((event.priceCents * quantity) / 100).toFixed(2)}`}
         </div>
         <button
          onClick={handleBook}

@@ -35,7 +35,7 @@ export default function OrganizerDashboardPage() {
 
  const handlePublish = async (id: number) => { try { await api.put(`/events/${id}/publish`); toast.success('Published'); loadData(); } catch { toast.error('Failed'); } };
  const handleDelete = async (id: number) => { if (!confirm('Cancel this event?')) return; try { await api.delete(`/events/${id}`); toast.success('Cancelled'); loadData(); } catch { toast.error('Failed'); } };
- const fmt = (c: number) => `$${(c / 100).toFixed(2)}`;
+ const fmt = (c: number) => `₹${(c / 100).toFixed(2)}`;
 
  // Chart data — derived from real backend stats
  const statusBreakdown = [
@@ -216,7 +216,7 @@ export default function OrganizerDashboardPage() {
           </div>
          </td>
          <td className="px-6 text-sm font-semibold text-surface-800 tabular-nums hidden md:table-cell">
-          {ev.priceCents === 0 ? 'Free' : `$${(ev.priceCents / 100).toFixed(2)}`}
+          {ev.priceCents === 0 ? 'Free' : `₹${(ev.priceCents / 100).toFixed(2)}`}
          </td>
          <td className="px-6"><StatusBadge status={ev.status} /></td>
          <td className="px-6 text-right">
