@@ -23,7 +23,7 @@ export default function LoginPage() {
  };
 
  return (
-  <div className="min-h-screen bg-surface-0 flex">
+  <div className="h-dvh overflow-hidden bg-surface-0 flex">
    {/* Form side */}
    <motion.div
     initial={{ opacity: 0, x: -12 }}
