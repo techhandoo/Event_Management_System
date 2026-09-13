@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { Booking, PagedResponse, ApiResponse } from '../types';
+import { getApiErrorMessage } from '../services/api';
 import toast from 'react-hot-toast';
 import { Ticket, ExternalLink } from 'lucide-react';
 import { PageHeader, EmptyState, StatusBadge, PageLoader } from '../components/ui';
@@ -23,7 +24,7 @@ export default function MyBookingsPage() {
    await api.put(`/bookings/${id}/cancel`);
    toast.success('Booking cancelled');
    setBookings(p => p.map(b => b.id === id ? { ...b, status: 'CANCELLED' as const } : b));
-  } catch (err: any) { toast.error(err.response?.data?.message || 'Failed'); }
+  } catch (err) { toast.error(getApiErrorMessage(err, 'Could not cancel this booking. If the event already started, cancellation may be closed.')); }
  };
 
  if (loading) return <PageLoader />;

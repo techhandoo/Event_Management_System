@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth, homeForRole } from '../context/AuthContext';
+import { getApiErrorMessage } from '../services/api';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Zap, ArrowRight, Users, Ticket } from 'lucide-react';
@@ -32,7 +33,7 @@ export default function RegisterPage() {
    if (err.response?.status === 409) {
     toast.error('Email already registered — try signing in instead.');
    } else {
-    toast.error(err.response?.data?.message || 'Failed to register');
+    toast.error(getApiErrorMessage(err, 'Registration failed. Please check your details and try again.'));
    }
   }
   finally { setIsSubmitting(false); }
