@@ -6,9 +6,31 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 120000, // 2 min for cold starts
+  timeout: 20000, // 20s hard cap — stalls must fail fast, not hang 2 min
   withCredentials: true, // Send cookies cross-origin
 });
+
+// ─── One-shot client keep-alive (only if the platform is cold) ────
+// UptimeRobot keeps the API warm normally, so this fires at most once per
+// session. If the platform did sleep (missed ping, new deploy), the user's
+// very first request would otherwise eat the 60–90s JVM boot inside the
+// auth request with only a spinner for feedback. Warms on /api/uptime and
+// only shows feedback if the wake actually takes >2s.
+let keepAliveDone = false;
+async function warmApi(): Promise<void> {
+  if (keepAliveDone) return;
+  keepAliveDone = true;
+  const started = performance.now();
+  try {
+    await axios.get('https://eventry-api.onrender.com/api/uptime', { timeout: 45000 });
+  } catch {
+    /* uptime endpoint never blocks the real request — retry logic below handles it */
+  }
+  if (performance.now() - started > 2000) {
+    toast('Waking up the server — this happens once', { icon: '⏳', duration: 5000 });
+  }
+}
+warmApi();
 
 // Cold-start indicator
 let coldStartToastId: string | null = null;
@@ -99,7 +121,28 @@ api.interceptors.response.use(
       coldStartToastId = null;
     }
 
+    // Aborted polls (tab backgrounded, component unmounted) are not errors —
+    // reject quietly with no retry, no toast, no log noise.
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
+
+    // Timeout on a read request: retry ONCE silently. Browser→Render
+    // stalls occasionally happen on reused keep-alive connections; a single
+    // fresh-connection retry recovers invisibly instead of surfacing an
+    // error to the user. Mutations are never auto-retried (not idempotent).
+    if (error.code === 'ECONNABORTED' && originalRequest
+        && !(originalRequest as { _timeoutRetry?: boolean })._timeoutRetry) {
+      const method = (originalRequest.method || '').toLowerCase();
+      const isMutation = method === 'post' || method === 'put' || method === 'delete' || method === 'patch';
+      if (!isMutation) {
+        (originalRequest as { _timeoutRetry?: boolean })._timeoutRetry = true;
+        console.warn(`Request timed out — retrying once: ${originalRequest.url}`);
+        return api(originalRequest);
+      }
+    }
 
     // On 401: try cookie-based refresh (browser sends refresh_token cookie automatically)
     // Skip refresh for auth endpoints — 401 means bad credentials, not expired token
@@ -123,6 +166,26 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// ─── Error message extraction ──────────────────────────
+// Single place that knows the backend error envelope ({success,message})
+// and axios network-error shapes. Pages call this instead of hand-rolling
+// `err.response?.data?.message || 'Failed'`, so users always get an
+// actionable, human message (enterprise standard, no raw 'Failed').
+export function getApiErrorMessage(err: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data as { message?: string } | string | undefined;
+    const msg = typeof data === 'string' ? data : data?.message;
+    if (msg) return msg;
+    if (err.code === 'ECONNABORTED') {
+      return 'The server took too long to respond — it may be waking up. Please retry in a moment.';
+    }
+    if (!err.response) {
+      return 'Cannot reach the server. Check your connection and try again.';
+    }
+  }
+  return fallback;
+}
 
 // ─── Auth endpoints ──────────────────────────────────
 export const authApi = {

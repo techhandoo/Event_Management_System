@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, CheckCheck, CalendarCheck, CalendarX, RotateCcw, AlertCircle, X } from 'lucide-react';
 import api from '../services/api';
@@ -27,8 +28,13 @@ export default function NotificationCenter() {
    ]);
    setNotifications(n.data.data.content || []);
    setUnreadCount(c.data.data.count ?? c.data.data);
-  } catch (err: any) {
-   if (err?.response?.status === 401 || err?.response?.status === 403) {
+  } catch (err: unknown) {
+   const status = (err as { response?: { status?: number } })?.response?.status;
+   if (axios.isCancel(err)) {
+    // Backgrounded poll aborted on unmount — expected, never an error
+    return;
+   }
+   if (status === 401 || status === 403) {
     if (intervalRef.current) clearInterval(intervalRef.current);
    }
   }

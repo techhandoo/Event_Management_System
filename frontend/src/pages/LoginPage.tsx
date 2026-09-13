@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth, homeForRole } from '../context/AuthContext';
+import { getApiErrorMessage } from '../services/api';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Zap, ArrowRight } from 'lucide-react';
@@ -18,7 +19,7 @@ export default function LoginPage() {
  const onSubmit = async (data: LoginForm) => {
   setIsSubmitting(true);
   try { const u = await login(data.email, data.password); toast.success('Welcome back!'); navigate(homeForRole(u?.role)); }
-  catch (err: any) { toast.error(err.response?.data?.message || 'Invalid credentials'); }
+  catch (err) { toast.error(getApiErrorMessage(err, 'Invalid email or password. Please try again.')); }
   finally { setIsSubmitting(false); }
  };
 
