@@ -2,7 +2,7 @@
 
 A full-stack event management platform built with **Spring Boot 3**, **React 18**, **Kafka**, and **PostgreSQL**. Users can register, authenticate, create and manage events, handle bookings with Razorpay payments, and receive real-time notifications.
 
----
+-
 
 ## ✨ Features
 
@@ -251,6 +251,6 @@ Once the backend is running, visit:
 | [docs/scope.md](docs/scope.md) | Feature scope and user stories |
 | [docs/planning.md](docs/planning.md) | Implementation roadmap |
 
----
+-
 
 ## 📄 License
