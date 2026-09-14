@@ -121,8 +121,7 @@ export default function EventDetailPage() {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card overflow-hidden">
      {/* Hero image */}
      <div className="h-56 sm:h-72 bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center relative overflow-hidden group">
-      {event.imageUrl ? (
-       <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+      {event.imageUrl ? (        <img src={event.imageUrl} alt={event.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
       ) : (
        <span className="text-white text-7xl font-bold opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all duration-700">{event.title[0]}</span>
       )}

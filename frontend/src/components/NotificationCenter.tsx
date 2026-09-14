@@ -26,8 +26,18 @@ export default function NotificationCenter() {
     api.get('/notifications?size=20', { signal }),
     api.get('/notifications/unread-count', { signal }),
    ]);
-   setNotifications(n.data.data.content || []);
-   setUnreadCount(c.data.data.count ?? c.data.data);
+   // Only update state when data actually changed — identical 30s poll
+   // responses would otherwise re-render the whole layout via context churn.
+   setNotifications(prev => {
+    const next = n.data.data.content || [];
+    const prevSig = prev.map(x => x.id + ':' + x.isRead).join(',');
+    const nextSig = next.map((x: Notification) => x.id + ':' + x.isRead).join(',');
+    return prevSig === nextSig ? prev : next;
+   });
+   setUnreadCount(prevCount => {
+    const next = c.data.data.count ?? c.data.data;
+    return prevCount === next ? prevCount : next;
+   });
   } catch (err: unknown) {
    const status = (err as { response?: { status?: number } })?.response?.status;
    if (axios.isCancel(err)) {

@@ -4,6 +4,7 @@ import com.eventmanager.model.Booking;
 import com.eventmanager.model.enums.BookingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -21,8 +22,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     boolean existsByUserIdAndEventIdAndStatusIn(Long userId, Long eventId, List<BookingStatus> statuses);
 
+    // @EntityGraph joins the event in one query — the response mapper reads
+    // event.title/venue per booking, so without this every row is a second SELECT (N+1).
+    @EntityGraph(attributePaths = {"event"})
     Page<Booking> findByUserIdAndStatus(Long userId, BookingStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"event"})
     Page<Booking> findByUserId(Long userId, Pageable pageable);
 
     // Optimized query using idx_bookings_event_status composite index
