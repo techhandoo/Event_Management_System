@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
-import api from '../services/api';
+import { authApi } from '../services/api';
 import { User } from '../types';
 
 /** Return the default landing page for a given role. */
@@ -42,7 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
  }, []);
 
  const login = async (email: string, password: string) => {
-  const response = await api.post('/auth/login', { email, password });
+  // authApi.login survives Render cold-start windows (timeout/502/503/504)
+  // with live progress feedback; real auth failures return instantly.
+  const response = await authApi.login({ email, password });
   const userData: User = response.data.data;
   // Only store user info — tokens are in httpOnly cookies
   localStorage.setItem('user', JSON.stringify(userData));
@@ -51,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
  };
 
  const register = async (email: string, password: string, fullName: string, role?: string) => {
-  const response = await api.post('/auth/register', { email, password, fullName, role: role || 'ATTENDEE' });
+  const response = await authApi.register({ email, password, fullName, role: role || 'ATTENDEE' });
   const userData: User = response.data.data;
   localStorage.setItem('user', JSON.stringify(userData));
   setUser(userData);

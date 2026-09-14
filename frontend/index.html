@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content="" />
     <meta name="theme-color" content="#0b0f19" />
+    <!-- Warm the API connection before JS even loads (cuts ~100-300ms off the first request) -->
+    <link rel="preconnect" href="https://eventry-api.onrender.com" crossorigin />
+    <link rel="dns-prefetch" href="https://eventry-api.onrender.com" />
+    <!-- Fonts: preload (non-blocking) instead of render-blocking CSS @import -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'" />
     <title>Eventry — Premium Event Management</title>
     <style>
       body { background-color: #0b0f19; }

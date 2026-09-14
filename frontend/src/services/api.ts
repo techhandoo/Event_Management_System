@@ -22,7 +22,7 @@ async function warmApi(): Promise<void> {
   keepAliveDone = true;
   const started = performance.now();
   try {
-    await axios.get('https://eventry-api.onrender.com/api/uptime', { timeout: 45000 });
+    await axios.get('https://eventry-api.onrender.com/api/uptime', { timeout: 120000 });
   } catch {
     /* uptime endpoint never blocks the real request — retry logic below handles it */
   }
@@ -34,6 +34,7 @@ warmApi();
 
 // Cold-start indicator
 let coldStartToastId: string | null = null;
+let coldStartToastTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingRequests = 0;
 
 // ─── Shared refresh promise ────────────────────────────
@@ -91,8 +92,14 @@ api.interceptors.request.use(
     }
 
     pendingRequests++;
-    if (pendingRequests === 1) {
-      coldStartToastId = toast.loading('Waking up server... this may take a moment', { duration: 60000 });
+    // Auth requests manage their own cold-start UX via postWithColdStartRetry,
+    // and the toast only appears after a 2s grace so warm requests (which
+    // answer in <1s) never flash "waking up" at the user.
+    const isAuthFlow = (config.url || '').includes('/auth/');
+    if (pendingRequests === 1 && !isAuthFlow) {
+      coldStartToastTimer = setTimeout(() => {
+        coldStartToastId = toast.loading('Waking up server… this may take a moment', { duration: 60000 });
+      }, 2000);
     }
     return config;
   },
@@ -108,17 +115,17 @@ api.interceptors.response.use(
     }
 
     pendingRequests = Math.max(0, pendingRequests - 1);
-    if (pendingRequests === 0 && coldStartToastId) {
-      toast.dismiss(coldStartToastId);
-      coldStartToastId = null;
+    if (pendingRequests === 0) {
+      if (coldStartToastTimer) { clearTimeout(coldStartToastTimer); coldStartToastTimer = null; }
+      if (coldStartToastId) { toast.dismiss(coldStartToastId); coldStartToastId = null; }
     }
     return response;
   },
   async (error) => {
     pendingRequests = Math.max(0, pendingRequests - 1);
-    if (pendingRequests === 0 && coldStartToastId) {
-      toast.dismiss(coldStartToastId);
-      coldStartToastId = null;
+    if (pendingRequests === 0) {
+      if (coldStartToastTimer) { clearTimeout(coldStartToastTimer); coldStartToastTimer = null; }
+      if (coldStartToastId) { toast.dismiss(coldStartToastId); coldStartToastId = null; }
     }
 
     // Aborted polls (tab backgrounded, component unmounted) are not errors —
@@ -129,17 +136,18 @@ api.interceptors.response.use(
 
     const originalRequest = error.config;
 
-    // Timeout on a read request: retry ONCE silently. Browser→Render
-    // stalls occasionally happen on reused keep-alive connections; a single
-    // fresh-connection retry recovers invisibly instead of surfacing an
-    // error to the user. Mutations are never auto-retried (not idempotent).
-    if (error.code === 'ECONNABORTED' && originalRequest
+    // Infra failure on a read request: retry ONCE silently (timeout, network
+    // drop, 502/503/504). Browser→Render stalls happen on reused keep-alive
+    // connections and during boot; a single fresh-connection retry recovers
+    // invisibly. Mutations are never auto-retried here (not idempotent) —
+    // auth POSTs use postWithColdStartRetry's budgeted loop instead.
+    if (originalRequest && isInfraFailure(error)
         && !(originalRequest as { _timeoutRetry?: boolean })._timeoutRetry) {
       const method = (originalRequest.method || '').toLowerCase();
       const isMutation = method === 'post' || method === 'put' || method === 'delete' || method === 'patch';
       if (!isMutation) {
         (originalRequest as { _timeoutRetry?: boolean })._timeoutRetry = true;
-        console.warn(`Request timed out — retrying once: ${originalRequest.url}`);
+        console.warn(`Request failed on infra error — retrying once: ${originalRequest.url}`);
         return api(originalRequest);
       }
     }
@@ -175,8 +183,13 @@ api.interceptors.response.use(
 export function getApiErrorMessage(err: unknown, fallback = 'Something went wrong. Please try again.'): string {
   if (axios.isAxiosError(err)) {
     const data = err.response?.data as { message?: string } | string | undefined;
-    const msg = typeof data === 'string' ? data : data?.message;
-    if (msg) return msg;
+    const raw = typeof data === 'string' ? data : data?.message;
+    // Render's proxy serves HTML error pages while the service is down —
+    // never surface raw HTML (or oversized payloads) as a user-facing message.
+    if (raw && !/<\s*(!doctype|html|body)/i.test(raw) && raw.length <= 300) return raw;
+    if (err.response && [502, 503, 504].includes(err.response.status)) {
+      return 'The server is restarting or briefly unavailable. Please try again in a few seconds.';
+    }
     if (err.code === 'ECONNABORTED') {
       return 'The server took too long to respond — it may be waking up. Please retry in a moment.';
     }
@@ -187,16 +200,73 @@ export function getApiErrorMessage(err: unknown, fallback = 'Something went wron
   return fallback;
 }
 
+// ─── Cold-start-aware POST wrapper ────────────────────
+// A login/register POST that dies at the 20s timeout while Render is booting
+// (~60–90s after a deploy restart) would otherwise make the user click
+// "Login" 4–5 times. This wrapper retries ONLY infrastructure failures
+// (timeout, network drop, 502/503/504 — same predicate the read-retry uses)
+// on fresh connections for up to 2.5 minutes with live progress feedback.
+// Real server responses — 401 bad password, 409 email taken, 400 validation —
+// return instantly, never retried.
+export interface ColdStartRetryOptions {
+  /** Total retry budget in ms. Default 150s ≈ full Render boot window. */
+  budgetMs?: number;
+}
+
+const COLD_START_RETRY_BUDGET_MS = 150000;
+const COLD_START_TOAST_GRACE_MS = 2000;
+const COLD_START_RETRY_PAUSE_MS = 2000;
+
+export function isInfraFailure(err: unknown): boolean {
+  if (!axios.isAxiosError(err)) return false;
+  if (err.code === 'ECONNABORTED') return true; // client timeout, no response
+  if (!err.response) return true;               // network drop
+  return err.response.status === 502 || err.response.status === 503 || err.response.status === 504;
+}
+
+export async function postWithColdStartRetry<T>(
+  url: string,
+  body?: unknown,
+  opts?: ColdStartRetryOptions
+): Promise<{ data: T }> {
+  const budgetMs = opts?.budgetMs ?? COLD_START_RETRY_BUDGET_MS;
+  const startedAt = Date.now();
+  let toastId: string | null = null;
+  let lastAnnouncedSec = 0;
+
+  try {
+    for (;;) {
+      try {
+        return await api.post<T>(url, body);
+      } catch (err) {
+        const waitedMs = Date.now() - startedAt;
+        if (!isInfraFailure(err) || waitedMs >= budgetMs) throw err;
+        const secs = Math.round(waitedMs / 1000);
+        if (!toastId && waitedMs >= COLD_START_TOAST_GRACE_MS) {
+          toastId = toast.loading('Waking up the server — this can take up to a minute after a deploy…', { duration: COLD_START_RETRY_BUDGET_MS });
+          lastAnnouncedSec = secs;
+        } else if (toastId && secs - lastAnnouncedSec >= 5) {
+          toast.loading(`Still waking up the server… ${secs}s`, { id: toastId, duration: COLD_START_RETRY_BUDGET_MS });
+          lastAnnouncedSec = secs;
+        }
+        await new Promise((resolve) => setTimeout(resolve, COLD_START_RETRY_PAUSE_MS)); // brief pause → fresh connection
+      }
+    }
+  } finally {
+    if (toastId) toast.dismiss(toastId);
+  }
+}
+
 // ─── Auth endpoints ──────────────────────────────────
 export const authApi = {
   login: (data: { email: string; password: string }) =>
-    api.post<unknown, { data: { data: import('../types').User } }>('/auth/login', data),
+    postWithColdStartRetry<{ data: import('../types').User }>('/auth/login', data),
 
-  register: (data: { email: string; password: string; fullName: string }) =>
-    api.post<unknown, { data: { data: import('../types').User } }>('/auth/register', data),
+  register: (data: { email: string; password: string; fullName: string; role?: string }) =>
+    postWithColdStartRetry<{ data: import('../types').User }>('/auth/register', data),
 
   forgotPassword: (email: string) =>
-    api.post<unknown, { data: { data: { message: string } } }>('/auth/forgot-password', { email }),
+    postWithColdStartRetry<{ data: { message: string } }>('/auth/forgot-password', { email }),
 
   resetPassword: (token: string, newPassword: string) =>
     api.post<unknown, { data: { data: { message: string } } }>('/auth/reset-password', { token, newPassword }),

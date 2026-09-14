@@ -5,7 +5,7 @@ import api from '../services/api';
 import { Event, PagedResponse, ApiResponse } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Clock, Users, Search, SlidersHorizontal, Zap, X, ChevronRight } from 'lucide-react';
-import { Spinner, EmptyState, Pagination } from '../components/ui';
+import { EmptyState, Pagination } from '../components/ui';
 
 const CATEGORIES = ['Conference', 'Workshop', 'Meetup', 'Concert', 'Sports', 'Exhibition', 'Seminar', 'Networking', 'Festival', 'Charity'];
 
@@ -119,7 +119,19 @@ export default function EventsPage() {
     </AnimatePresence>
 
     {loading ? (
-     <div className="flex justify-center py-20"><Spinner size="lg" /></div>
+     // Skeleton grid mirrors the real card layout — no spinner spin, no layout shift
+     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, i) => (
+       <div key={i} className="card overflow-hidden animate-pulse">
+        <div className="h-44 bg-white/[0.06]" />
+        <div className="p-4 space-y-2.5">
+         <div className="h-4 w-3/4 bg-white/[0.06] rounded" />
+         <div className="h-3 w-1/2 bg-white/[0.06] rounded" />
+         <div className="h-3 w-2/3 bg-white/[0.06] rounded" />
+        </div>
+       </div>
+      ))}
+     </div>
     ) : events.length === 0 ? (
      <EmptyState icon={<Search size={36} className="text-surface-300" />} title="No events found" description="Try adjusting your search or filters" />
     ) : (
@@ -136,7 +148,7 @@ export default function EventsPage() {
          <Link to={`/events/${event.id}`} className="card-hover overflow-hidden group block h-full">
           <div className="h-44 bg-gradient-to-br from-brand-500 to-brand-700 relative overflow-hidden">
            {event.imageUrl ? (
-            <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out" />
+            <img src={event.imageUrl} alt={event.title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out" />
            ) : (
             <div className="w-full h-full flex items-center justify-center">
              <span className="text-white text-5xl font-bold opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all duration-500">{event.title[0]}</span>

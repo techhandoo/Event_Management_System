@@ -28,3 +28,9 @@
 - `ErrorBoundary` deliberately does `window.location.replace('/')` on stale-chunk errors ("Failed to fetch dynamically imported module") after deploys — old lazy chunks 404 once a new bundle ships; don't "fix" the redirect.
 - Page roots on auth screens are `h-dvh overflow-hidden` (not `min-h-screen`) — `min-h-screen` let content exceed the viewport and pushed forms below the fold (register-page scroll bug).
 - Notification polls abort via `AbortController` — the response interceptor rejects `axios.isCancel` quietly (no retry/toast). `RequestTimingFilter` logs `[SLOW]` WARN lines per request; that's the tool for any future latency report.
+
+## Performance (as of the perf pass)
+- Caching has ONE owner: `CacheConfig` (Caffeine fallback when Redis absent — current prod — Composite Redis→Caffeine when present). `@Cacheable`/`@CacheEvict` were silent no-ops before this; don't create a second CacheManager bean.
+- `bookingRepository` list queries need `@EntityGraph(attributePaths = {"event"})` — the response mapper reads `event.title/venue` per row (N+1 without it).
+- Vite `manualChunks` (vendor/motion/charts) + page-level `React.lazy` are in place; `vite build` currently outputs ~640 kB across 5 JS chunks — the vendor chunk is dominated by recharts and only shrinks by lazy-loading dashboard chart components.
+- Frontend tests: `npm test` (vitest, jsdom) covers `api.ts` retry/error logic; `src/services/api.test.ts` spies on the exported axios *instance* (`api.post`), not `axios.post`.
