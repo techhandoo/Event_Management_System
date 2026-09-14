@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 import { authApi } from '../services/api';
+import { API_BASE_URL } from '../config';
 import { User } from '../types';
 
 /** Return the default landing page for a given role. */
@@ -63,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Backend clears httpOnly cookies on /auth/logout
   // Use raw axios to avoid interceptor refresh loop
   try {
-   await axios.post('https://eventry-api.onrender.com/api/auth/logout', null, {
+   await axios.post(`${API_BASE_URL}/auth/logout`, null, {
     withCredentials: true,
    });
   } catch {

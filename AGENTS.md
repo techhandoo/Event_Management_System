@@ -34,3 +34,5 @@
 - `bookingRepository` list queries need `@EntityGraph(attributePaths = {"event"})` — the response mapper reads `event.title/venue` per row (N+1 without it).
 - Vite `manualChunks` (vendor/motion/charts) + page-level `React.lazy` are in place; `vite build` currently outputs ~640 kB across 5 JS chunks — the vendor chunk is dominated by recharts and only shrinks by lazy-loading dashboard chart components.
 - Frontend tests: `npm test` (vitest, jsdom) covers `api.ts` retry/error logic; `src/services/api.test.ts` spies on the exported axios *instance* (`api.post`), not `axios.post`.
+- `frontend/src/config.ts` is the single owner of the API base URL (`VITE_API_URL` env → prod fallback). Never hardcode `eventry-api.onrender.com` in components/services; `index.html` preconnect is static and must be updated separately.
+- `npm run lint` works now (ESLint 9 flat config in `frontend/eslint.config.js`). `no-undef` is deliberately off for TS files — tsc owns that check and no-undef false-positives on type-position globals like `React.FormEvent`. Hook-deps warnings fail the build (`--max-warnings 0`) — wrap loaders in `useCallback([page])`, don't disable the rule.

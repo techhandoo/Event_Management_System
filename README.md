@@ -207,7 +207,7 @@ Once the backend is running, visit:
 ### Frontend
 | Variable | Description |
 |----------|-------------|
-| `VITE_API_URL` | Backend API URL (default: `https://eventry-api.onrender.com/api`) |
+| `VITE_API_URL` | Backend API URL (default: `https://eventry-api.onrender.com/api`). Read by `frontend/src/config.ts` — the single source the app uses (also preconnected in `index.html`). |
 
 ---
 

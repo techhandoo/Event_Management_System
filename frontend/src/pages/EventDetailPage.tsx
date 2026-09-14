@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { getApiErrorMessage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Event, ApiResponse } from '../types';
 import toast from 'react-hot-toast';
@@ -55,8 +55,8 @@ export default function EventDetailPage() {
     }
     openRazorpayCheckout(orderData);
    }
-  } catch (err: any) {
-   toast.error(err.response?.data?.message || 'Booking failed');
+  } catch (err) {
+   toast.error(getApiErrorMessage(err, 'Booking failed. Please try again.'));
   } finally {
    setBooking(false);
   }
@@ -81,7 +81,7 @@ export default function EventDetailPage() {
      toast.success('Payment successful! Booking confirmed.');
      celebrate();
      navigate('/my-bookings');
-    } catch (err: any) {
+    } catch {
      toast.error('Payment was received but confirmation failed. Contact support.');
      navigate('/my-bookings');
     }

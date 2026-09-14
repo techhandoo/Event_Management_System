@@ -25,20 +25,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // @EntityGraph joins the event in one query — the response mapper reads
     // event.title/venue per booking, so without this every row is a second SELECT (N+1).
     @EntityGraph(attributePaths = {"event"})
-    Page<Booking> findByUserIdAndStatus(Long userId, BookingStatus status, Pageable pageable);
-
-    @EntityGraph(attributePaths = {"event"})
     Page<Booking> findByUserId(Long userId, Pageable pageable);
 
     // Optimized query using idx_bookings_event_status composite index
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.event.id = :eventId AND b.status = 'CONFIRMED'")
     long countConfirmedBookingsByEventId(@Param("eventId") Long eventId);
 
-    // Optimized query using idx_bookings_user_status composite index
-    @Query("SELECT COUNT(b) FROM Booking b WHERE b.user.id = :userId AND b.status = 'CONFIRMED'")
-    long countConfirmedBookingsByUserId(@Param("userId") Long eventId);
 
-    List<Booking> findByEventIdAndStatus(Long eventId, BookingStatus status);
 
     Optional<Booking> findByRazorpayOrderId(String razorpayOrderId);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Users, Calendar, DollarSign, TrendingUp, Shield, UserCheck, UserX, Activity } from 'lucide-react';
 import api from '../services/api';
 import { Analytics, User } from '../types';
@@ -17,7 +17,7 @@ export default function AdminDashboardPage() {
  const [totalPages, setTotalPages] = useState(0);
  const [systemHealth, setSystemHealth] = useState<'UP' | 'DEGRADED' | 'DOWN'>('UP');
 
- const loadData = async () => {
+ const loadData = useCallback(async () => {
   try {
    const [a, u, h] = await Promise.all([
     api.get('/admin/analytics').catch(() => ({ data: { data: null } })),
@@ -30,9 +30,9 @@ export default function AdminDashboardPage() {
    setTotalPages(d.totalPages);
    setSystemHealth(h.data?.status || 'DOWN');
   } catch { toast.error('Failed to load'); } finally { setLoading(false); }
- };
+ }, [page]);
 
- useEffect(() => { loadData(); }, [page]);
+ useEffect(() => { loadData(); }, [loadData]);
 
  const handleRole = async (id: number, role: string) => {
   try { await api.put(`/admin/users/${id}/role?role=${role}`); toast.success('Role updated'); loadData(); }

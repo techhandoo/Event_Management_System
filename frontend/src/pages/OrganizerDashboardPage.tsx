@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, DollarSign, Eye, Users, Plus, Send, Edit, Trash2, TrendingUp, BarChart3 } from 'lucide-react';
 import api from '../services/api';
@@ -18,7 +18,7 @@ export default function OrganizerDashboardPage() {
  const [page, setPage] = useState(0);
  const [totalPages, setTotalPages] = useState(0);
 
- const loadData = async () => {
+ const loadData = useCallback(async () => {
   try {
    const [s, e] = await Promise.all([
     api.get('/events/my/stats').catch(() => ({ data: { data: { totalEvents: 0, publishedEvents: 0, draftEvents: 0, totalBookings: 0, totalRevenueCents: 0 } } })),
@@ -29,9 +29,9 @@ export default function OrganizerDashboardPage() {
    setEvents(d.content);
    setTotalPages(d.totalPages);
   } catch { toast.error('Failed to load'); } finally { setLoading(false); }
- };
+ }, [page]);
 
- useEffect(() => { loadData(); }, [page]);
+ useEffect(() => { loadData(); }, [loadData]);
 
  const handlePublish = async (id: number) => { try { await api.put(`/events/${id}/publish`); toast.success('Published'); loadData(); } catch { toast.error('Failed'); } };
  const handleDelete = async (id: number) => { if (!confirm('Cancel this event?')) return; try { await api.delete(`/events/${id}`); toast.success('Cancelled'); loadData(); } catch { toast.error('Failed'); } };
