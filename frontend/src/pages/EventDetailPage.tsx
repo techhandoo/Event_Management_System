@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api, { getApiErrorMessage } from '../services/api';
+import { formatMoney, formatINR, formatDateLong } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import { Event, ApiResponse } from '../types';
 import toast from 'react-hot-toast';
@@ -50,7 +51,9 @@ export default function EventDetailPage() {
     try {
      await loadRazorpay();
     } catch {
-     toast.error('Payment system is loading. Please try again in a moment.');
+     // Usually an ad-blocker or CSP/shield blocking checkout.razorpay.com — retrying now won't help.
+     toast.error('Couldn\'t load the payment system. If you use an ad-blocker, allow checkout.razorpay.com and try again.');
+     setBooking(false);
      return;
     }
     openRazorpayCheckout(orderData);
@@ -62,7 +65,7 @@ export default function EventDetailPage() {
   }
  };
 
- const openRazorpayCheckout = (orderData: any) => {
+ const openRazorpayCheckout = (orderData: { keyId: string; amount: number; currency: string; eventName: string; orderId: string }) => {
   const options = {
    key: orderData.keyId,
    amount: orderData.amount,
@@ -70,7 +73,7 @@ export default function EventDetailPage() {
    name: 'Eventry',
    description: `Booking: ${orderData.eventName}`,
    order_id: orderData.orderId,
-   handler: async function (response: any) {
+   handler: async function (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
     // Payment successful — verify on backend
     try {
      await api.post('/payments/verify', {
@@ -108,8 +111,6 @@ export default function EventDetailPage() {
  if (loading) return <PageLoader />;
  if (!event) return null;
 
- const fmt = (c: number) => c === 0 ? 'Free' : `₹${(c / 100).toFixed(2)}`;
- const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
  const capacityPct = event.capacity > 0 ? Math.round(((event.capacity - event.availableCapacity) / event.capacity) * 100) : 0;
 
  return (
@@ -150,7 +151,7 @@ export default function EventDetailPage() {
         {event.category && <span className="badge-brand">{event.category}</span>}
        </div>
        <div className="text-right flex-shrink-0">
-        <div className="text-2xl font-bold text-brand-600">{fmt(event.priceCents)}</div>
+        <div className="text-2xl font-bold text-brand-600">{formatMoney(event.priceCents)}</div>
         <div className="text-xs text-surface-400">per ticket</div>
        </div>
       </div>
@@ -158,7 +159,7 @@ export default function EventDetailPage() {
       {/* Info + Booking */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
        <div className="space-y-5">
-        <InfoRow icon={<Calendar size={18} className="text-brand-500" />} label={fmtDate(event.startTime)} sub={`to ${fmtDate(event.endTime)}`} />
+        <InfoRow icon={<Calendar size={18} className="text-brand-500" />} label={formatDateLong(event.startTime)} sub={`to ${formatDateLong(event.endTime)}`} />
         <InfoRow icon={<MapPin size={18} className="text-brand-500" />} label={event.venue} sub={event.city} />
         <InfoRow icon={<Users size={18} className="text-brand-500" />} label={`${event.availableCapacity} spots available`} sub={`out of ${event.capacity} total`} />
         {/* Capacity bar */}
@@ -197,7 +198,7 @@ export default function EventDetailPage() {
          </select>
         </div>
         <div className="text-lg font-bold text-surface-800 mb-4">
-         Total: {event.priceCents === 0 ? 'Free' : `₹${((event.priceCents * quantity) / 100).toFixed(2)}`}
+         Total: {event.priceCents === 0 ? "Free" : formatINR(event.priceCents * quantity)}
         </div>
         <button
          onClick={handleBook}

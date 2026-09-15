@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Ticket, CheckCircle, XCircle, DollarSign, Calendar, ArrowRight, Clock } from 'lucide-react';
 import api from '../services/api';
+import { formatMoney, formatINR, formatDateOnly } from '../lib/format';
 import { Booking, Event } from '../types';
 import toast from 'react-hot-toast';
 import { KPICard, PageHeader, StatusBadge, EmptyState, PageLoader, MiniAreaChart, ActivityFeed } from '../components/ui';
@@ -61,8 +62,8 @@ export default function DashboardPage() {
   icon: b.status === 'CONFIRMED' ? <CheckCircle size={14} className="text-emerald-600" /> : <XCircle size={14} className="text-red-600" />,
   iconBg: b.status === 'CONFIRMED' ? 'bg-emerald-50' : 'bg-red-50',
   title: `Booking ${b.status === 'CONFIRMED' ? 'confirmed' : 'cancelled'}`,
-  description: `${b.eventTitle} — ₹${(b.totalCents / 100).toFixed(2)}`,
-  timestamp: new Date(b.bookedAt).toLocaleDateString(),
+  description: `${b.eventTitle} — ${formatMoney(b.totalCents)}`,
+  timestamp: formatDateOnly(b.bookedAt),
  }));
 
  if (loading) return <PageLoader />;
@@ -97,7 +98,7 @@ export default function DashboardPage() {
     <KPICard
      icon={<DollarSign size={20} />}
      label="Total Spent"
-     value={`₹${(totalSpent / 100).toFixed(2)}`}
+     value={formatINR(totalSpent)}
      accent="warning"
      delay={0.15}
     />
@@ -170,11 +171,11 @@ export default function DashboardPage() {
           <td className="px-6 text-sm text-surface-500 hidden sm:table-cell">
            <div className="flex items-center gap-1.5">
             <Clock size={12} className="text-surface-400" />
-            {new Date(b.bookedAt).toLocaleDateString()}
+            {formatDateOnly(b.bookedAt)}
            </div>
           </td>
           <td className="px-6 text-sm font-semibold text-surface-800 tabular-nums">
-           {b.totalCents === 0 ? 'Free' : `₹${(b.totalCents / 100).toFixed(2)}`}
+           {formatMoney(b.totalCents)}
           </td>
           <td className="px-6"><StatusBadge status={b.status} /></td>
          </tr>
@@ -223,12 +224,12 @@ export default function DashboardPage() {
        <Link key={ev.id} to={`/events/${ev.id}`} className="p-5 hover:bg-surface-25 transition-colors group">
         <div className="flex items-center gap-2 mb-2">
          <Calendar size={14} className="text-brand-500" />
-         <span className="text-xs text-surface-400">{new Date(ev.startTime).toLocaleDateString()}</span>
+         <span className="text-xs text-surface-400">{formatDateOnly(ev.startTime)}</span>
         </div>
         <h4 className="text-sm font-semibold text-surface-800 group-hover:text-brand-600 transition-colors line-clamp-1">{ev.title}</h4>
         <p className="text-xs text-surface-400 mt-1">{ev.city} · {ev.category || 'General'}</p>
         <div className="mt-3 flex items-center justify-between">
-         <span className="text-sm font-bold text-surface-800">{ev.priceCents === 0 ? 'Free' : `₹${(ev.priceCents / 100).toFixed(2)}`}</span>
+         <span className="text-sm font-bold text-surface-800">{formatMoney(ev.priceCents)}</span>
          <span className="text-xs text-emerald-600 font-medium">{ev.availableCapacity} spots</span>
         </div>
        </Link>

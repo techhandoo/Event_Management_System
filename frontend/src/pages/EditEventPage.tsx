@@ -61,8 +61,8 @@ export default function EditEventPage() {
    });
    toast.success('Event updated!');
    navigate('/organizer');
-  } catch (err: any) {
-   const resp = err.response?.data;
+  } catch (err) {
+   const resp = (err as { response?: { data?: { data?: Record<string, string>; message?: string } } }).response?.data;
    if (resp?.data && typeof resp.data === 'object') {
     Object.entries(resp.data).forEach(([f, m]) => toast.error(`${f}: ${m}`));
    } else {

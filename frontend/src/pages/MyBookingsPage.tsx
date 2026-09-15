@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { Booking, PagedResponse, ApiResponse } from '../types';
 import { getApiErrorMessage } from '../services/api';
+import { formatMoney, formatDateOnly } from '../lib/format';
 import toast from 'react-hot-toast';
 import { Ticket, ExternalLink } from 'lucide-react';
 import { PageHeader, EmptyState, StatusBadge, PageLoader } from '../components/ui';
@@ -64,11 +65,11 @@ export default function MyBookingsPage() {
            </Link>
           </td>
           <td className="px-6 text-sm text-surface-500 hidden sm:table-cell">
-           {new Date(b.bookedAt).toLocaleDateString()}
+           {formatDateOnly(b.bookedAt)}
           </td>
           <td className="px-6 text-sm text-surface-600">{b.quantity}</td>
           <td className="px-6 text-sm font-semibold text-surface-800">
-           {b.totalCents === 0 ? 'Free' : `₹${(b.totalCents / 100).toFixed(2)}`}
+           {formatMoney(b.totalCents)}
           </td>
           <td className="px-6 text-xs text-surface-400 hidden md:table-cell">
            {b.totalCents === 0 ? '—' : b.paymentId ? <span className="text-emerald-500">Paid</span> : <span className="text-amber-500">Pending</span>}

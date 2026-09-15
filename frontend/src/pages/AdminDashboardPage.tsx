@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Users, Calendar, DollarSign, TrendingUp, Shield, UserCheck, UserX, Activity } from 'lucide-react';
-import api from '../services/api';
+import api, { getApiErrorMessage } from '../services/api';
+import { formatINR, formatDateOnly } from '../lib/format';
 import { Analytics, User } from '../types';
 import toast from 'react-hot-toast';
 import { KPICard, PageHeader, StatusBadge, Pagination, PageLoader, EnterpriseBarChart, DonutChart, ActivityFeed } from '../components/ui';
@@ -29,20 +30,19 @@ export default function AdminDashboardPage() {
    setUsers(d.content);
    setTotalPages(d.totalPages);
    setSystemHealth(h.data?.status || 'DOWN');
-  } catch { toast.error('Failed to load'); } finally { setLoading(false); }
+  } catch (err) { toast.error(getApiErrorMessage(err, 'Failed to load admin data.')); } finally { setLoading(false); }
  }, [page]);
 
  useEffect(() => { loadData(); }, [loadData]);
 
  const handleRole = async (id: number, role: string) => {
   try { await api.put(`/admin/users/${id}/role?role=${role}`); toast.success('Role updated'); loadData(); }
-  catch { toast.error('Failed'); }
+  catch (err) { toast.error(getApiErrorMessage(err, 'Failed to update role.')); }
  };
  const handleBan = async (id: number) => {
   try { await api.put(`/admin/users/${id}/ban`); toast.success('Status toggled'); loadData(); }
-  catch { toast.error('Failed'); }
+  catch (err) { toast.error(getApiErrorMessage(err, 'Failed to update user status.')); }
  };
- const fmt = (c: number) => `₹${(c / 100).toFixed(2)}`;
 
  // Chart data — derived from real backend analytics
  const roleBreakdown = [
@@ -88,7 +88,7 @@ export default function AdminDashboardPage() {
   iconBg: u.isActive ? 'bg-emerald-50' : 'bg-red-50',
   title: `${u.fullName}`,
   description: `${u.role.toLowerCase()} — ${u.email}`,
-  timestamp: new Date(u.createdAt).toLocaleDateString(),
+  timestamp: formatDateOnly(u.createdAt),
  }));
 
  if (loading) return <PageLoader />;
@@ -125,7 +125,7 @@ export default function AdminDashboardPage() {
      accent="success" delay={0.05} />
     <KPICard icon={<TrendingUp size={20} />} label="Total Bookings" value={analytics?.totalBookings || 0}
      accent="warning" delay={0.1} />
-    <KPICard icon={<DollarSign size={20} />} label="Total Revenue" value={fmt(analytics?.totalRevenueCents || 0)}
+    <KPICard icon={<DollarSign size={20} />} label="Total Revenue" value={formatINR(analytics?.totalRevenueCents || 0)}
      accent="brand" delay={0.15} />
    </div>
 
@@ -259,7 +259,7 @@ export default function AdminDashboardPage() {
          </td>
          <td className="px-6"><StatusBadge status={u.isActive ? 'ACTIVE' : 'BANNED'} /></td>
          <td className="px-6 text-xs text-surface-500 hidden sm:table-cell">
-          {new Date(u.createdAt).toLocaleDateString()}
+          {formatDateOnly(u.createdAt)}
          </td>
          <td className="px-6 text-right">
           <button
