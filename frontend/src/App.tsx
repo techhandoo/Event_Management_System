@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import ScrollToTop from './components/ScrollToTop';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth, homeForRole } from './context/AuthContext';
@@ -13,8 +14,9 @@ import { lazy, Suspense, ReactNode } from 'react';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import EventsPageWrapper from './components/EventsPageWrapper';
-import EventDetailPageWrapper from './components/EventDetailPageWrapper';
+import EventsPage from './pages/EventsPage';
+import EventDetailPage from './pages/EventDetailPage';
+import DashboardGate from './components/DashboardGate';
 
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
@@ -49,9 +51,7 @@ function PublicRoute({ children }: { children: ReactNode }) {
  if (isLoading) return <PageLoader />;
  if (isAuthenticated) return <Navigate to={homeForRole(user?.role)} />;
  return <>{children}</>;
-}
-
-function AnimatedRoutes() {
+} function AnimatedRoutes() {
  const location = useLocation();
  return (
   // Page-fade route transitions: a short opacity crossfade on every navigation.
@@ -64,6 +64,7 @@ function AnimatedRoutes() {
     exit={{ opacity: 0 }}
     transition={{ duration: 0.12 }}
    >
+    <ScrollToTop />
     <Suspense fallback={<PageLoader />}>
      <Routes location={location}>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
@@ -71,10 +72,10 @@ function AnimatedRoutes() {
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
       <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
       <Route path="/setup-admin" element={<AdminSetupPage />} />
-      <Route path="/events" element={<EventsPageWrapper />} />
+      <Route path="/events" element={<DashboardGate><EventsPage /></DashboardGate>} />
       <Route path="/events/create" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><CreateEventPage /></ProtectedRoute>} />
       <Route path="/events/:id/edit" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><EditEventPage /></ProtectedRoute>} />
-      <Route path="/events/:id" element={<EventDetailPageWrapper />} />
+      <Route path="/events/:id" element={<DashboardGate><EventDetailPage /></DashboardGate>} />
       <Route path="/my-bookings" element={<ProtectedRoute><MyBookingsPage /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/organizer" element={<ProtectedRoute roles={['ORGANIZER', 'ADMIN']}><OrganizerDashboardPage /></ProtectedRoute>} />

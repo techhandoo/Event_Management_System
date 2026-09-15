@@ -9,11 +9,11 @@
     <!-- Warm the API connection before JS even loads (cuts ~100-300ms off the first request) -->
     <link rel="preconnect" href="https://eventry-api.onrender.com" crossorigin />
     <link rel="dns-prefetch" href="https://eventry-api.onrender.com" />
-    <!-- Fonts: preload (non-blocking) instead of render-blocking CSS @import -->
+    <!-- Fonts: async load without render-blocking and without inline JS (CSP forbids inline event handlers) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" media="print" />
     <title>Eventry — Premium Event Management</title>
     <style>
       body { background-color: #0b0f19; }

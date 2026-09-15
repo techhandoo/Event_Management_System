@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import api from '../services/api';
+import api, { getApiErrorMessage } from '../services/api';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Shield, Zap, ArrowRight, Key } from 'lucide-react';
@@ -28,8 +28,8 @@ export default function AdminSetupPage() {
    setSuccess(true);
    toast.success('Admin account created!');
    setTimeout(() => navigate('/admin'), 1500); // Admin always goes to /admin
-  } catch (err: any) {
-   toast.error(err.response?.data?.message || 'Failed to create admin');
+  } catch (err) {
+   toast.error(getApiErrorMessage(err, 'Failed to create admin. Please try again.'));
   } finally {
    setIsSubmitting(false);
   }

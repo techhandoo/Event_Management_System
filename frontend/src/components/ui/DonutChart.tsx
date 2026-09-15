@@ -1,4 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import ChartTooltip from './ChartTooltip';
 
 interface DataPoint {
  name: string;
@@ -16,18 +17,6 @@ interface DonutChartProps {
 }
 
 const COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#f87171', '#34d399', '#fbbf24'];
-
-const CustomTooltip = ({ active, payload }: any) => {
- if (active && payload && payload.length) {
-  return (
-   <div className="surface-card px-3 py-2 shadow-dropdown">
-    <p className="text-xs font-semibold text-surface-800">{payload[0].name}</p>
-    <p className="text-sm font-bold text-brand-400 tabular-nums">{payload[0].value.toLocaleString()}</p>
-   </div>
-  );
- }
- return null;
-};
 
 export default function DonutChart({
  data, height = 200, innerRadius = 60, outerRadius = 90, centerLabel, centerValue
@@ -50,7 +39,7 @@ export default function DonutChart({
        <Cell key={index} fill={entry.color || COLORS[index % COLORS.length]} />
       ))}
      </Pie>
-     <Tooltip content={<CustomTooltip />} />
+     <Tooltip content={<ChartTooltip />} />
     </PieChart>
    </ResponsiveContainer>
    {centerLabel && (

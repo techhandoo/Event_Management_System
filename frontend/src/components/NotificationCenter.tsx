@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { Bell, Check, CheckCheck, CalendarCheck, CalendarX, RotateCcw, AlertCircle, X } from 'lucide-react';
 import api from '../services/api';
 import { Notification } from '../types';
@@ -73,7 +74,11 @@ export default function NotificationCenter() {
    await api.put('/notifications/read-all');
    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
    setUnreadCount(0);
-  } catch {}
+  } catch {
+   // State is untouched on failure (updates happen after the call succeeds)
+   // — surface the failure instead of silently doing nothing.
+   toast.error('Could not mark notifications as read. Please try again.');
+  }
  };
 
  return (

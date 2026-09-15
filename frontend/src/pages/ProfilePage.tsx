@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { getApiErrorMessage } from '../services/api';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { User, Mail, Lock, Save, Eye, EyeOff, ArrowLeft, Shield, Calendar } from 'lucide-react';
@@ -49,8 +49,8 @@ export default function ProfilePage() {
     localStorage.setItem('user', JSON.stringify(u));
    }
    toast.success('Name updated');
-  } catch (err: any) {
-   toast.error(err.response?.data?.message || 'Failed to update name');
+  } catch (err) {
+   toast.error(getApiErrorMessage(err, 'Failed to update name. Please try again.'));
   } finally {
    setSavingName(false);
   }
@@ -66,8 +66,8 @@ export default function ProfilePage() {
    toast.success('Email updated successfully!');
    setNewEmail('');
    setEmailPassword('');
-  } catch (err: any) {
-   toast.error(err.response?.data?.message || 'Failed to update email');
+  } catch (err) {
+   toast.error(getApiErrorMessage(err, 'Failed to update email. Please try again.'));
   } finally {
    setSavingEmail(false);
   }
@@ -85,8 +85,8 @@ export default function ProfilePage() {
    setCurrentPassword('');
    setNewPassword('');
    setConfirmPassword('');
-  } catch (err: any) {
-   toast.error(err.response?.data?.message || 'Failed to change password');
+  } catch (err) {
+   toast.error(getApiErrorMessage(err, 'Failed to change password. Please try again.'));
   } finally {
    setSavingPassword(false);
   }

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, DollarSign, Eye, Users, Plus, Send, Edit, Trash2, TrendingUp, BarChart3 } from 'lucide-react';
-import api from '../services/api';
+import api, { getApiErrorMessage } from '../services/api';
+import { formatINR, formatMoney, formatDateOnly } from '../lib/format';
 import { Event } from '../types';
 import toast from 'react-hot-toast';
 import { KPICard, PageHeader, StatusBadge, Pagination, EmptyState, PageLoader, EnterpriseBarChart, DonutChart, ActivityFeed } from '../components/ui';
@@ -18,7 +19,7 @@ export default function OrganizerDashboardPage() {
  const [page, setPage] = useState(0);
  const [totalPages, setTotalPages] = useState(0);
 
- const loadData = async () => {
+ const loadData = useCallback(async () => {
   try {
    const [s, e] = await Promise.all([
     api.get('/events/my/stats').catch(() => ({ data: { data: { totalEvents: 0, publishedEvents: 0, draftEvents: 0, totalBookings: 0, totalRevenueCents: 0 } } })),
@@ -28,14 +29,13 @@ export default function OrganizerDashboardPage() {
    const d: PagedEvents = e.data.data;
    setEvents(d.content);
    setTotalPages(d.totalPages);
-  } catch { toast.error('Failed to load'); } finally { setLoading(false); }
- };
+  } catch (err) { toast.error(getApiErrorMessage(err, 'Failed to load your events.')); } finally { setLoading(false); }
+ }, [page]);
 
- useEffect(() => { loadData(); }, [page]);
+ useEffect(() => { loadData(); }, [loadData]);
 
- const handlePublish = async (id: number) => { try { await api.put(`/events/${id}/publish`); toast.success('Published'); loadData(); } catch { toast.error('Failed'); } };
- const handleDelete = async (id: number) => { if (!confirm('Cancel this event?')) return; try { await api.delete(`/events/${id}`); toast.success('Cancelled'); loadData(); } catch { toast.error('Failed'); } };
- const fmt = (c: number) => `₹${(c / 100).toFixed(2)}`;
+ const handlePublish = async (id: number) => { try { await api.put(`/events/${id}/publish`); toast.success('Published'); loadData(); } catch (err) { toast.error(getApiErrorMessage(err, 'Failed to publish event.')); } };
+ const handleDelete = async (id: number) => { if (!confirm('Delete this event? Bookings will be cancelled.')) return; try { await api.delete(`/events/${id}`); toast.success('Event deleted'); loadData(); } catch (err) { toast.error(getApiErrorMessage(err, 'Failed to delete event.')); } };
 
  // Chart data — derived from real backend stats
  const statusBreakdown = [
@@ -79,7 +79,7 @@ export default function OrganizerDashboardPage() {
   iconBg: ev.status === 'PUBLISHED' ? 'bg-emerald-50' : 'bg-amber-50',
   title: ev.status === 'PUBLISHED' ? `Event published` : `Event in draft`,
   description: `${ev.title} — ${ev.city}`,
-  timestamp: new Date(ev.createdAt).toLocaleDateString(),
+  timestamp: formatDateOnly(ev.createdAt),
  }));
 
  if (loading) return <PageLoader />;
@@ -97,7 +97,7 @@ export default function OrganizerDashboardPage() {
      accent="success" delay={0.05} />
     <KPICard icon={<Users size={20} />} label="Total Bookings" value={stats?.totalBookings || 0}
      accent="warning" delay={0.1} />
-    <KPICard icon={<DollarSign size={20} />} label="Revenue" value={fmt(stats?.totalRevenueCents || 0)}
+    <KPICard icon={<DollarSign size={20} />} label="Revenue" value={formatINR(stats?.totalRevenueCents || 0)}
      accent="brand" delay={0.15} />
    </div>
 
@@ -202,7 +202,7 @@ export default function OrganizerDashboardPage() {
           <p className="text-xs text-surface-400">{ev.city}</p>
          </td>
          <td className="px-6 text-sm text-surface-500 hidden sm:table-cell">
-          {new Date(ev.startTime).toLocaleDateString()}
+          {formatDateOnly(ev.startTime)}
          </td>
          <td className="px-6 hidden md:table-cell">
           <div className="flex items-center gap-2">
@@ -216,7 +216,7 @@ export default function OrganizerDashboardPage() {
           </div>
          </td>
          <td className="px-6 text-sm font-semibold text-surface-800 tabular-nums hidden md:table-cell">
-          {ev.priceCents === 0 ? 'Free' : `₹${(ev.priceCents / 100).toFixed(2)}`}
+          {formatMoney(ev.priceCents)}
          </td>
          <td className="px-6"><StatusBadge status={ev.status} /></td>
          <td className="px-6 text-right">

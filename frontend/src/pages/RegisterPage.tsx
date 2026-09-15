@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Zap, ArrowRight, Users, Ticket } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { passwordRules } from '../lib/validation';
 import EventBackdrop from '../components/EventBackdrop';
 
 interface RegisterForm { fullName: string; email: string; password: string; }
@@ -29,8 +30,9 @@ export default function RegisterPage() {
    await reg(data.email, data.password, data.fullName, selectedRole);
    toast.success('Account created!');
    navigate(homeForRole(selectedRole));
-  } catch (err: any) {
-   if (err.response?.status === 409) {
+  } catch (err) {
+   const status = (err as { response?: { status?: number } }).response?.status;
+   if (status === 409) {
     toast.error('Email already registered — try signing in instead.');
    } else {
     toast.error(getApiErrorMessage(err, 'Registration failed. Please check your details and try again.'));
@@ -39,16 +41,8 @@ export default function RegisterPage() {
   finally { setIsSubmitting(false); }
  };
 
- // Mirrors backend StrongPasswordValidator so users get instant feedback
- const passwordRules = (v: string) => {
-  if (!v) return 'Password is required';
-  if (v.length < 8) return 'At least 8 characters';
-  if (!/[A-Z]/.test(v)) return 'Must include an uppercase letter';
-  if (!/[a-z]/.test(v)) return 'Must include a lowercase letter';
-  if (!/[0-9]/.test(v)) return 'Must include a number';
-  if (!/[^A-Za-z0-9]/.test(v)) return 'Must include a special character (!@#$ etc.)';
-  return true;
- };
+ // Instant client feedback, same rules as the backend StrongPasswordValidator
+ // (single owner: lib/validation.ts, also used by ResetPasswordPage).
 
  return (
   <div className="h-dvh overflow-hidden bg-surface-0 flex">

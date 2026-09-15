@@ -33,12 +33,9 @@ import java.util.Map;
 @EnableCaching
 public class CacheConfig {
 
-    /** Cache name → TTL. Mirrors product expectations (events change often, detail is stable). */
+    /** Cache name → TTL. Only caches that code actually populates; add entries when new @Cacheable sites appear. */
     private static final Map<String, Duration> CACHE_TTLS = Map.of(
-            "events", Duration.ofMinutes(5),
-            "event-detail", Duration.ofMinutes(15),
-            "analytics", Duration.ofMinutes(2),
-            "users", Duration.ofMinutes(10)
+            "event-detail", Duration.ofMinutes(15)
     );
 
     private static final Duration LOCAL_L1_TTL = Duration.ofMinutes(2);

@@ -125,8 +125,8 @@ export default function CreateEventPage() {
    });
    toast.success('Event created as draft! 🎉');
    navigate(`/events/${r.data.data.id}`);
-  } catch (err: any) {
-   const data = err.response?.data;
+  } catch (err) {
+   const data = (err as { response?: { data?: { data?: Record<string, string>; message?: string } } }).response?.data;
    if (data?.data && typeof data.data === 'object') {
     // Map backend field names to friendly labels
     const friendlyNames: Record<string, string> = {

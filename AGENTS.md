@@ -24,6 +24,9 @@
 - Mockito strictness is on (`UnnecessaryStubbingException` fails builds) — stub only what each test uses.
 
 ## Frontend error handling (keep centralized)
+- `ScrollToTop` (rendered inside `AnimatedRoutes`) resets scroll on every route change — AnimatePresence crossfades keep the old page's scrollY otherwise, which made /login appear scrolled into empty space when opened from the landing page. Don't remove it.
+- CSP (vercel.json + `SecurityConfig`) forbids inline event handlers — the async font stylesheet's `media="print"`→`all` flip lives in `main.tsx`, not an `onload=` attribute. New `<link>` tricks must stay CSP-safe.
+- Razorpay checkout console noise (accelerometer Permissions-Policy violations, `localhost:70xx/*.png` beacon 404s, `x-rtb-fingerprint-id` header warnings) originates inside Razorpay's own iframe scripts — unfixable from our side, not a bug.
 - `getApiErrorMessage(err, fallback)` in `services/api.ts` is the single backend-error-envelope extractor — pages must use it, never hand-roll `err.response?.data?.message || 'Failed'` (raw "Failed" toasts are the enterprise-UX regression we removed).
 - `ErrorBoundary` deliberately does `window.location.replace('/')` on stale-chunk errors ("Failed to fetch dynamically imported module") after deploys — old lazy chunks 404 once a new bundle ships; don't "fix" the redirect.
 - Page roots on auth screens are `h-dvh overflow-hidden` (not `min-h-screen`) — `min-h-screen` let content exceed the viewport and pushed forms below the fold (register-page scroll bug).
@@ -34,3 +37,7 @@
 - `bookingRepository` list queries need `@EntityGraph(attributePaths = {"event"})` — the response mapper reads `event.title/venue` per row (N+1 without it).
 - Vite `manualChunks` (vendor/motion/charts) + page-level `React.lazy` are in place; `vite build` currently outputs ~640 kB across 5 JS chunks — the vendor chunk is dominated by recharts and only shrinks by lazy-loading dashboard chart components.
 - Frontend tests: `npm test` (vitest, jsdom) covers `api.ts` retry/error logic; `src/services/api.test.ts` spies on the exported axios *instance* (`api.post`), not `axios.post`.
+- `frontend/src/config.ts` is the single owner of the API base URL (`VITE_API_URL` env → prod fallback). Never hardcode `eventry-api.onrender.com` in components/services; `index.html` preconnect is static and must be updated separately.
+- `lib/format.ts` owns money/date display (`formatMoney` shows "Free" at 0, `formatINR` always shows a number — use it for revenue stats); `lib/validation.ts` owns the password strength rules mirrored from the backend. Don't re-inline `toFixed(2)`/`toLocaleDateString` in pages.
+- Events pages for guests render bare, for authed users inside `DashboardLayout` — via `components/DashboardGate.tsx` in App.tsx routes (the old `EventsPageWrapper`/`EventDetailPageWrapper` pair was deleted as duplication).
+- `npm run lint` works now (ESLint 9 flat config in `frontend/eslint.config.js`). `no-undef` is deliberately off for TS files — tsc owns that check and no-undef false-positives on type-position globals like `React.FormEvent`. Hook-deps warnings fail the build (`--max-warnings 0`) — wrap loaders in `useCallback([page])`, don't disable the rule.

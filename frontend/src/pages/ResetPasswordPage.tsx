@@ -1,5 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { getApiErrorMessage } from '../services/api';
+import { passwordRules } from '../lib/validation';
 import { motion } from 'framer-motion';
 import {
  Lock,
@@ -50,8 +52,9 @@ export default function ResetPasswordPage() {
   e.preventDefault();
   setError('');
 
-  if (newPassword.length < 8) {
-   setError('Password must be at least 8 characters.');
+  const strength = passwordRules(newPassword);
+  if (strength !== true) {
+   setError(strength + '.');
    return;
   }
   if (newPassword !== confirmPassword) {
@@ -63,9 +66,8 @@ export default function ResetPasswordPage() {
   try {
    await authApi.resetPassword(token, newPassword);
    setSuccess(true);
-  } catch (err: unknown) {
-   const apiErr = err as { response?: { data?: { message?: string } } };
-   setError(apiErr.response?.data?.message || 'Failed to reset password. The link may have expired.');
+  } catch (err) {
+   setError(getApiErrorMessage(err, 'Failed to reset password. The link may have expired.'));
   } finally {
    setLoading(false);
   }

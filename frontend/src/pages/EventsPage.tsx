@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { formatMoney, formatDateShort } from '../lib/format';
 import { Event, PagedResponse, ApiResponse } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Clock, Users, Search, SlidersHorizontal, Zap, X, ChevronRight } from 'lucide-react';
@@ -17,6 +18,7 @@ export default function EventsPage() {
  const [searchParams] = useSearchParams();
  const [events, setEvents] = useState<Event[]>([]);
  const [loading, setLoading] = useState(true);
+ const [loadError, setLoadError] = useState(false);
  const [page, setPage] = useState(0);
  const [totalPages, setTotalPages] = useState(0);
  const [search, setSearch] = useState(searchParams.get('q') || '');
@@ -27,27 +29,41 @@ export default function EventsPage() {
 
  useEffect(() => { const t = setTimeout(() => setDebouncedSearch(search), 400); return () => clearTimeout(t); }, [search]);
 
- const fetchEvents = useCallback(async () => {
+ const fetchEvents = useCallback(async (pageToLoad: number) => {
   setLoading(true);
+  setLoadError(false);
   try {
    if (debouncedSearch.length >= 2) {
-    const r = await api.get<ApiResponse<PagedResponse<Event>>>('/events/search', { params: { q: debouncedSearch, page, size: 9 } });
+    const r = await api.get<ApiResponse<PagedResponse<Event>>>('/events/search', { params: { q: debouncedSearch, page: pageToLoad, size: 9 } });
     setEvents(r.data.data.content); setTotalPages(r.data.data.totalPages);
    } else {
-    const params: Record<string, any> = { page, size: 9 };
+    const params: Record<string, unknown> = { page: pageToLoad, size: 9 };
     if (cityFilter) params.city = cityFilter;
     if (categoryFilter) params.category = categoryFilter;
     const r = await api.get<ApiResponse<PagedResponse<Event>>>('/events', { params });
     setEvents(r.data.data.content); setTotalPages(r.data.data.totalPages);
    }
-  } catch { console.error('Failed to fetch events'); } finally { setLoading(false); }
- }, [page, cityFilter, categoryFilter, debouncedSearch]);
+  } catch {
+   // A failed load must never masquerade as an empty catalog.
+   setLoadError(true);
+  } finally { setLoading(false); }
+ }, [debouncedSearch, cityFilter, categoryFilter]);
 
- useEffect(() => { fetchEvents(); }, [fetchEvents]);
- useEffect(() => { setPage(0); }, [debouncedSearch, cityFilter, categoryFilter]);
+ // Single fetch owner: a filter/debounce change resets to page 0 and fetches
+ // once (page reset re-enters this effect); pagination changes fetch directly.
+ // The old two-effect version fired a stale-page fetch AND a page-0 fetch.
+ const filtersKey = `${debouncedSearch}|${cityFilter}|${categoryFilter}`;
+ const lastFiltersRef = useRef<string | null>(null);
+ useEffect(() => {
+  if (lastFiltersRef.current !== filtersKey) {
+   lastFiltersRef.current = filtersKey;
+   if (page !== 0) { setPage(0); return; } // reset re-triggers the fetch below
+   fetchEvents(0);
+   return;
+  }
+  fetchEvents(page);
+ }, [filtersKey, page, fetchEvents]);
 
- const fmt = (c: number) => c === 0 ? 'Free' : `₹${(c / 100).toFixed(2)}`;
- const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
  return (
   <div className={isAuthenticated ? '' : 'min-h-screen bg-surface-0'}>
@@ -133,7 +149,16 @@ export default function EventsPage() {
       ))}
      </div>
     ) : events.length === 0 ? (
-     <EmptyState icon={<Search size={36} className="text-surface-300" />} title="No events found" description="Try adjusting your search or filters" />
+     loadError ? (
+      <EmptyState
+       icon={<Search size={36} className="text-surface-300" />}
+       title="Couldn't load events"
+       description="The server may be waking up or briefly unavailable."
+       action={<button onClick={() => fetchEvents(page)} className="btn-primary text-sm">Try again</button>}
+      />
+     ) : (
+      <EmptyState icon={<Search size={36} className="text-surface-300" />} title="No events found" description="Try adjusting your search or filters" />
+     )
     ) : (
      <>
       <p className="text-sm text-surface-500 mb-4 font-medium">{events.length} event{events.length !== 1 ? 's' : ''}</p>
@@ -157,7 +182,7 @@ export default function EventsPage() {
            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
            <div className="absolute top-3 right-3">
             <span className="bg-surface-0/80 text-surface-900 text-xs font-bold px-2.5 py-1 rounded-lg shadow-xs group-hover:shadow-md transition-shadow border border-white/[0.06]">
-             {fmt(event.priceCents)}
+             {formatMoney(event.priceCents)}
             </span>
            </div>
           </div>
@@ -172,7 +197,7 @@ export default function EventsPage() {
            <div className="space-y-1.5 text-xs text-surface-500 mt-2">
             <div className="flex items-center gap-2">
              <Clock size={13} className="text-surface-400 flex-shrink-0" />
-             {fmtDate(event.startTime)}
+             {formatDateShort(event.startTime)}
             </div>
             <div className="flex items-center gap-2">
              <MapPin size={13} className="text-surface-400 flex-shrink-0" />

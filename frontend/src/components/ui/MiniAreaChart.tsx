@@ -1,4 +1,5 @@
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
+import ChartTooltip from './ChartTooltip';
 
 interface DataPoint {
  label: string;
@@ -11,18 +12,6 @@ interface MiniAreaChartProps {
  height?: number;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
- if (active && payload && payload.length) {
-  return (
-   <div className="bg-surface-800 text-white text-xs px-2.5 py-1.5 rounded-lg shadow-lg">
-    <p className="font-medium">{payload[0].value.toLocaleString()}</p>
-    <p className="text-surface-400 text-[10px]">{label}</p>
-   </div>
-  );
- }
- return null;
-};
-
 export default function MiniAreaChart({ data, color = '#0070F3', height = 60 }: MiniAreaChartProps) {
  return (
   <ResponsiveContainer width="100%" height={height}>
@@ -33,7 +22,7 @@ export default function MiniAreaChart({ data, color = '#0070F3', height = 60 }: 
       <stop offset="100%" stopColor={color} stopOpacity={0} />
      </linearGradient>
     </defs>
-    <Tooltip content={<CustomTooltip />} />
+    <Tooltip content={<ChartTooltip compact />} />
     <Area
      type="monotone"
      dataKey="value"

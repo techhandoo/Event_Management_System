@@ -1,8 +1,9 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '../config';
 
 const api = axios.create({
-  baseURL: 'https://eventry-api.onrender.com/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -22,7 +23,7 @@ async function warmApi(): Promise<void> {
   keepAliveDone = true;
   const started = performance.now();
   try {
-    await axios.get('https://eventry-api.onrender.com/api/uptime', { timeout: 120000 });
+    await axios.get(`${API_BASE_URL}/uptime`, { timeout: 120000 });
   } catch {
     /* uptime endpoint never blocks the real request — retry logic below handles it */
   }
@@ -49,7 +50,7 @@ async function refreshAccessToken(): Promise<void> {
   refreshPromise = (async () => {
     try {
       // The refresh_token cookie is sent automatically by the browser
-      await axios.post('https://eventry-api.onrender.com/api/auth/refresh', null, {
+      await axios.post(`${API_BASE_URL}/auth/refresh`, null, {
         withCredentials: true,
       });
       // New access_token + refresh_token cookies are now set by the browser
