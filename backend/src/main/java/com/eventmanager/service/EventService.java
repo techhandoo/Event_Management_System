@@ -214,26 +214,40 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public Page<EventResponse> getOrganizerEvents(String organizerEmail, Pageable pageable) {
-        User organizer = userRepository.findByEmail(organizerEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", organizerEmail));
-        return eventRepository.findByOrganizerId(organizer.getId(), pageable)
+    public Page<EventResponse> getOrganizerEvents(String userEmail, Pageable pageable) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
+        // Admins manage every event platform-wide; organizers see only their own.
+        if (user.getRole() == com.eventmanager.model.enums.Role.ADMIN) {
+            return eventRepository.findAll(pageable).map(eventMapper::toResponse);
+        }
+        return eventRepository.findByOrganizerId(user.getId(), pageable)
                 .map(eventMapper::toResponse);
     }
 
     // ── Organizer Stats ─────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public OrganizerStatsResponse getOrganizerStats(String organizerEmail) {
-        User organizer = userRepository.findByEmail(organizerEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", organizerEmail));
+    public OrganizerStatsResponse getOrganizerStats(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", userEmail));
 
-        long totalEvents = eventRepository.countByOrganizerId(organizer.getId());
-        long publishedEvents = eventRepository.countByOrganizerIdAndStatus(organizer.getId(), EventStatus.PUBLISHED);
-        long draftEvents = eventRepository.countByOrganizerIdAndStatus(organizer.getId(), EventStatus.DRAFT);
-        long totalRevenue = eventRepository.sumRevenueByOrganizerId(organizer.getId());
-        long totalBookings = bookingRepository.countConfirmedByOrganizerId(organizer.getId());
-        long totalAttendees = bookingRepository.countDistinctAttendeesByOrganizerId(organizer.getId());
+        // Admins get platform-wide totals; organizers get their own.
+        boolean isAdmin = user.getRole() == com.eventmanager.model.enums.Role.ADMIN;
+        long organizerId = user.getId();
+
+        long totalEvents = isAdmin ? eventRepository.count()
+                : eventRepository.countByOrganizerId(organizerId);
+        long publishedEvents = isAdmin ? eventRepository.countByStatus(EventStatus.PUBLISHED)
+                : eventRepository.countByOrganizerIdAndStatus(organizerId, EventStatus.PUBLISHED);
+        long draftEvents = isAdmin ? eventRepository.countByStatus(EventStatus.DRAFT)
+                : eventRepository.countByOrganizerIdAndStatus(organizerId, EventStatus.DRAFT);
+        long totalRevenue = isAdmin ? bookingRepository.sumAllRevenue()
+                : eventRepository.sumRevenueByOrganizerId(organizerId);
+        long totalBookings = isAdmin ? bookingRepository.countByStatus(com.eventmanager.model.enums.BookingStatus.CONFIRMED)
+                : bookingRepository.countConfirmedByOrganizerId(organizerId);
+        long totalAttendees = isAdmin ? bookingRepository.countDistinctAttendees()
+                : bookingRepository.countDistinctAttendeesByOrganizerId(organizerId);
 
         return OrganizerStatsResponse.builder()
                 .totalEvents(totalEvents)

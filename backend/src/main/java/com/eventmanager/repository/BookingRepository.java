@@ -38,6 +38,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT COUNT(b) FROM Booking b")
     long countAll();
 
+    long countByStatus(com.eventmanager.model.enums.BookingStatus status);
+
+    @Query("SELECT COUNT(DISTINCT b.user.id) FROM Booking b WHERE b.status = 'CONFIRMED'")
+    long countDistinctAttendees();
+
     @Query("SELECT COALESCE(SUM(b.totalCents), 0) FROM Booking b WHERE b.status = 'CONFIRMED'")
     long sumAllRevenue();
 

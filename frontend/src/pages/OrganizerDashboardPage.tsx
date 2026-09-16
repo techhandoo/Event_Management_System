@@ -8,11 +8,14 @@ import toast from 'react-hot-toast';
 import { KPICard, PageHeader, StatusBadge, Pagination, EmptyState, PageLoader, EnterpriseBarChart, DonutChart, ActivityFeed } from '../components/ui';
 import type { ActivityItem } from '../components/ui/ActivityFeed';
 import { motion } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 interface Stats { totalEvents: number; publishedEvents: number; draftEvents: number; totalBookings: number; totalRevenueCents: number; }
 interface PagedEvents { content: Event[]; totalPages: number; }
 
 export default function OrganizerDashboardPage() {
+ const { user } = useAuth();
+ const isAdmin = user?.role === 'ADMIN';
  const [stats, setStats] = useState<Stats | null>(null);
  const [events, setEvents] = useState<Event[]>([]);
  const [loading, setLoading] = useState(true);
@@ -187,6 +190,7 @@ export default function OrganizerDashboardPage() {
       <thead>
        <tr>
         <th className="px-6">Event</th>
+        {isAdmin && <th className="px-6 hidden lg:table-cell">Organizer</th>}
         <th className="px-6 hidden sm:table-cell">Date</th>
         <th className="px-6 hidden md:table-cell">Capacity</th>
         <th className="px-6 hidden md:table-cell">Price</th>
@@ -201,6 +205,7 @@ export default function OrganizerDashboardPage() {
           <Link to={`/events/${ev.id}`} className="text-sm font-medium text-surface-800 hover:text-brand-600">{ev.title}</Link>
           <p className="text-xs text-surface-400">{ev.city}</p>
          </td>
+         {isAdmin && <td className="px-6 text-sm text-surface-500 hidden lg:table-cell">{ev.organizerName}</td>}
          <td className="px-6 text-sm text-surface-500 hidden sm:table-cell">
           {formatDateOnly(ev.startTime)}
          </td>
